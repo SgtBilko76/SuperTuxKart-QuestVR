@@ -7,7 +7,7 @@
 ; which should be called "supertuxkart" and then copy the
 ; GPL in the supertuxkart directory to 'license.txt'.
 ; Next to supertuxkart create a subdirectory called 'prerequisites'
-; and copy the VC++ (vcredist_x86.exe) redistributables.
+; and copy the VC++ (vcredist_x64.exe) redistributables.
 ; You will then need to make an icon, you can use:
 ; http://tools.dynamicdrive.com/favicon/ to convert a png to an icon.
 ; Once you have made an icon put it in the supertuxkart dir and call it
@@ -35,7 +35,7 @@
   !define VERSION_MINOR 9
   !define VERSION_REVISION 3
   ; Empty means stable, could be -git, -rc1
-  !define VERSION_BUILD "-rc1"
+  !define VERSION_BUILD "-git"
   
   ;Name and file
   !define APPNAME "SuperTuxKart"
@@ -54,7 +54,7 @@
   RequestExecutionLevel admin
 
   ;Default installation folder
-  InstallDir "$PROGRAMFILES\${APPNAMEANDVERSION}"
+  InstallDir "$PROGRAMFILES64\${APPNAMEANDVERSION}"
 
   ;Get installation folder from registry if available
   InstallDirRegKey HKCU "Software\${APPNAMEANDVERSION}" ""
@@ -259,8 +259,8 @@ SectionEnd
 Section -Prerequisites
   ;SetOutPath $INSTDIR\Prerequisites
   MessageBox MB_YESNO "Install Microsoft VC++ runtime libraries?" /SD IDYES IDNO endVC
-    File "prerequisites\vcredist_x86.exe"
-    ExecWait "$INSTDIR\prerequisites\vcredist_x86.exe /q"
+    File "prerequisites\vcredist_x64.exe"
+    ExecWait "$INSTDIR\prerequisites\vcredist_x64.exe /q"
     Goto endVC
   endVC:
 SectionEnd
@@ -277,16 +277,15 @@ Section "Uninstall" redist
   RMDir /r /REBOOTOK $INSTDIR\data
   RMDir /r /REBOOTOK $INSTDIR\prerequisites
 
-  DELETE /REBOOTOK "$INSTDIR\glew32.dll"
   DELETE /REBOOTOK "$INSTDIR\install.ico"
   DELETE /REBOOTOK "$INSTDIR\icon.ico"
-  DELETE /REBOOTOK "$INSTDIR\Irrlicht.dll"
-  DELETE /REBOOTOK "$INSTDIR\libcurl.dll"
+  DELETE /REBOOTOK "$INSTDIR\libcurl-4.dll"
   DELETE /REBOOTOK "$INSTDIR\libeay32.dll"
   DELETE /REBOOTOK "$INSTDIR\libidn-11.dll"
   DELETE /REBOOTOK "$INSTDIR\License.txt"
-  DELETE /REBOOTOK "$INSTDIR\freetype6.dll"
-  DELETE /REBOOTOK "$INSTDIR\libogg.dll"
+  DELETE /REBOOTOK "$INSTDIR\libfreetype.dll"
+  DELETE /REBOOTOK "$INSTDIR\libfribidi-0.dll"
+  DELETE /REBOOTOK "$INSTDIR\libogg-0.dll"
   DELETE /REBOOTOK "$INSTDIR\OpenAL32.dll"
   DELETE /REBOOTOK "$INSTDIR\physfs.dll"
   DELETE /REBOOTOK "$INSTDIR\pthreadVC2.dll"
@@ -299,9 +298,9 @@ Section "Uninstall" redist
   DELETE /REBOOTOK "$INSTDIR\supertuxkart-editor.ico"
   DELETE /REBOOTOK "$INSTDIR\supertuxkart-editor.pdb"
   DELETE /REBOOTOK "$INSTDIR\uninstall.ico"
-  DELETE /REBOOTOK "$INSTDIR\libvorbis.dll"
-  DELETE /REBOOTOK "$INSTDIR\libvorbisenc.dll"
-  DELETE /REBOOTOK "$INSTDIR\libvorbisfile.dll"
+  DELETE /REBOOTOK "$INSTDIR\libvorbis-0.dll"
+  DELETE /REBOOTOK "$INSTDIR\libvorbisenc-2.dll"
+  DELETE /REBOOTOK "$INSTDIR\libvorbisfile-3.dll"
   DELETE /REBOOTOK "$INSTDIR\wrap_oal.dll"
   DELETE /REBOOTOK "$INSTDIR\zlib.dll"
   DELETE /REBOOTOK "$INSTDIR\zlib.pdb"
