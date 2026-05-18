@@ -69,8 +69,8 @@ void Plunger::onFireFlyable()
     float up_velocity = 0.0f;
     float plunger_speed = 2 * m_speed;
 
-    // if the kart is looking backwards, release from the back
-    m_reverse_mode = m_owner->getControls().getLookBack();
+    // if the kart requests it, fire backwards
+    m_reverse_mode = m_owner->getControls().getFireBack();
 
     // find closest kart in front of the current one
     const Kart *closest_kart=0;

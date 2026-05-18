@@ -39,3 +39,8 @@ InputDevice::~InputDevice()
 {
 }   // ~InputDevice
 
+// ------------------------------------------------------------------------
+bool InputDevice::lookbackToFireback() const
+{
+    return !m_configuration->hasDedicatedFireback();
+}   // lookbackToFireBack

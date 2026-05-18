@@ -114,6 +114,8 @@ public:
     void setConnected(bool val) { m_connected = val; }
     // ------------------------------------------------------------------------
     bool isConnected() const { return m_connected; }
+    // ------------------------------------------------------------------------
+    bool lookbackToFireback() const;
 };   // class InputDevice
 
 #endif

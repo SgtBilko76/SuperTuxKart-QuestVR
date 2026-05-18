@@ -236,7 +236,7 @@ void SkiddingAI::update(int ticks)
     m_controls->setRescue(false);
 
     // This is used to enable firing an item backwards.
-    m_controls->setLookBack(false);
+    m_controls->setFireBack(false);
     m_controls->setNitro(false);
 
     // Don't do anything if there is currently a kart animations shown.
@@ -1095,7 +1095,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
    
     if (m_superpower == RaceManager::SUPERPOWER_NOLOK_BOSS)
     {
-        m_controls->setLookBack(m_kart->getPowerup()->getType() ==
+        m_controls->setFireBack(m_kart->getPowerup()->getType() ==
                                    PowerupManager::POWERUP_BOWLING   );
 
         if( m_time_since_last_shot > 3.0f )
@@ -1233,7 +1233,7 @@ void SkiddingAI::handleItems(const float dt, const Vec3 *aim_point, int last_nod
             m_controls->setFire(distance < 30.0f                 ||
                                  m_time_since_last_shot > 10.0f    );
             if(m_controls->getFire())
-                m_controls->setLookBack(fire_backwards);
+                m_controls->setFireBack(fire_backwards);
             break;
         }   // POWERUP_PLUNGER
 
@@ -1326,7 +1326,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
     if((item_skill == 2) && (m_time_since_last_shot > 2.0f))
     {
         m_controls->setFire(true);
-        m_controls->setLookBack(false);
+        m_controls->setFireBack(false);
         return;
     }
     
@@ -1342,7 +1342,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
              || (projectile_types[1] >= 1 && type != Attachment::ATTACH_SWATTER))
           {
              m_controls->setFire(true);
-             m_controls->setLookBack(false);
+             m_controls->setFireBack(false);
              return;
           }
        }
@@ -1356,7 +1356,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
              || (projectile_types[1] >= 1 && type != Attachment::ATTACH_SWATTER))
           {
              m_controls->setFire(true);
-             m_controls->setLookBack(false);
+             m_controls->setFireBack(false);
              return;
           }
        }
@@ -1368,7 +1368,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
           if (projectile_types[0] >=1 || projectile_types[2] >=1 || projectile_types[3] >=1 )
           {
              m_controls->setFire(true);
-             m_controls->setLookBack(false);
+             m_controls->setFireBack(false);
              return;
           }
        }
@@ -1380,7 +1380,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
       || type == Attachment::ATTACH_ANCHOR )
     {
         m_controls->setFire(true);
-        m_controls->setLookBack(false);
+        m_controls->setFireBack(false);
         return;
     }
     //if it is a bomb, wait : we may pass it to another kart before the timer runs out
@@ -1389,7 +1389,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
         if (m_kart->getAttachment()->getTicksLeft() < stk_config->time2Ticks(2))
         {
             m_controls->setFire(true);
-            m_controls->setLookBack(false);
+            m_controls->setFireBack(false);
             return;
         }
     }
@@ -1398,7 +1398,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
     if(m_kart->getBlockedByPlungerTicks()>0)
     {
         m_controls->setFire(true);
-        m_controls->setLookBack(false);
+        m_controls->setFireBack(false);
         return;
     }
     
@@ -1412,7 +1412,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
           if ((item_skill == 4 && d < 1.5f) || (item_skill == 5 && d < 0.7f))
           {
              m_controls->setFire(true);
-             m_controls->setLookBack(false);
+             m_controls->setFireBack(false);
              return;
           }
        }
@@ -1428,7 +1428,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
           if ((items_to_collect[0]->getType() == Item::ITEM_BONUS_BOX) && (d < 0.7f))
           {
              m_controls->setFire(true);
-             m_controls->setLookBack(false);
+             m_controls->setFireBack(false);
              return;
           }
        }
@@ -1454,7 +1454,7 @@ void SkiddingAI::handleBubblegum(int item_skill,
        (!m_item_manager->areItemsSwitched() || item_skill < 4))
     {
         m_controls->setFire(true);
-        m_controls->setLookBack(true);
+        m_controls->setFireBack(true);
         return;
     }
     return;
@@ -1592,7 +1592,7 @@ void SkiddingAI::handleCake(int item_skill)
 
     m_controls->setFire( fire );
     if(m_controls->getFire())
-        m_controls->setLookBack(fire_backwards);
+        m_controls->setFireBack(fire_backwards);
     return;
 
 } //handleCake
@@ -1676,7 +1676,7 @@ void SkiddingAI::handleBowling(int item_skill)
     m_controls->setFire( ( (fire_backwards && distance < 30.0f)  ||
                            (!fire_backwards && distance <10.0f)    ));
     if(m_controls->getFire())
-        m_controls->setLookBack(fire_backwards);
+        m_controls->setFireBack(fire_backwards);
     return;
 } //handleBowling
 
@@ -1707,7 +1707,7 @@ void SkiddingAI::handleSwatter(int item_skill)
              || type == Attachment::ATTACH_ANCHOR )
         {
             m_controls->setFire(true);
-            m_controls->setLookBack(false);
+            m_controls->setFireBack(false);
             return;
         }
         //if it is a bomb, wait : we may pass it to another kart before the timer runs out
@@ -1716,7 +1716,7 @@ void SkiddingAI::handleSwatter(int item_skill)
             if (m_kart->getAttachment()->getTicksLeft() > stk_config->time2Ticks(3))
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(false);
+                m_controls->setFireBack(false);
                 return;
             }
         }

@@ -133,6 +133,7 @@ void GamepadConfig::setDefaultBinds ()
     setBinding(PA_DRIFT,        Input::IT_STICKBUTTON, 2);
     setBinding(PA_RESCUE,       Input::IT_STICKBUTTON, 3);
     setBinding(PA_LOOK_BACK,    Input::IT_STICKBUTTON, 4);
+    setBinding(PA_FIRE_BACK,    Input::IT_NONE, 0);
     setBinding(PA_PAUSE_RACE,   Input::IT_STICKBUTTON, 5);
 
     setBinding(PA_MENU_UP,      Input::IT_STICKMOTION, 1, Input::AD_NEGATIVE);
@@ -470,6 +471,9 @@ void GamepadConfig::initSDLMapping()
     for (auto& p : m_sdl_mapping)
         actions_map[p.second] = p.first;
 
+    // No default mapping for the fire back action
+    setBinding(PA_FIRE_BACK, Input::IT_NONE, 0, Input::AD_NEUTRAL);
+
     bool has_direction = false;
     // Some old gamepad map axes to DPad, handle it too
     bool use_axes_direction = false;
@@ -513,18 +517,16 @@ void GamepadConfig::initSDLMapping()
         setBindingFromTuple(PA_MENU_RIGHT, actions_map.at(SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
     }
     // Goto fallback if not all required bindings are found
-    if (actions_map.find(SDL_CONTROLLER_BUTTON_A) == actions_map.end())
+    if (actions_map.find(SDL_CONTROLLER_BUTTON_A) == actions_map.end() ||
+        actions_map.find(SDL_CONTROLLER_BUTTON_B) == actions_map.end() ||
+        actions_map.find(SDL_CONTROLLER_BUTTON_X) == actions_map.end() ||
+        actions_map.find(SDL_CONTROLLER_BUTTON_Y) == actions_map.end() ||
+        actions_map.find(SDL_CONTROLLER_BUTTON_BACK) == actions_map.end() ||
+        actions_map.find(SDL_CONTROLLER_BUTTON_START) == actions_map.end())
+    {
         goto fallback;
-    if (actions_map.find(SDL_CONTROLLER_BUTTON_B) == actions_map.end())
-        goto fallback;
-    if (actions_map.find(SDL_CONTROLLER_BUTTON_X) == actions_map.end())
-        goto fallback;
-    if (actions_map.find(SDL_CONTROLLER_BUTTON_Y) == actions_map.end())
-        goto fallback;
-    if (actions_map.find(SDL_CONTROLLER_BUTTON_BACK) == actions_map.end())
-        goto fallback;
-    if (actions_map.find(SDL_CONTROLLER_BUTTON_START) == actions_map.end())
-        goto fallback;
+    }
+
     // If shoulder buttons are found change acceleration handling because some
     // stick may not handle acceleration and steering good together
     if (actions_map.find(SDL_CONTROLLER_BUTTON_LEFTSHOULDER) != actions_map.end() &&
@@ -571,6 +573,7 @@ fallback:
     setBinding(PA_NITRO, Input::IT_NONE, 0, Input::AD_NEUTRAL);
     setBinding(PA_DRIFT, Input::IT_NONE, 0, Input::AD_NEUTRAL);
     setBinding(PA_LOOK_BACK, Input::IT_NONE, 0, Input::AD_NEUTRAL);
+    setBinding(PA_FIRE_BACK, Input::IT_NONE, 0, Input::AD_NEUTRAL);
     setBinding(PA_RESCUE, Input::IT_NONE, 0, Input::AD_NEUTRAL);
     setBinding(PA_PAUSE_RACE, Input::IT_NONE, 0, Input::AD_NEUTRAL);
     setBinding(PA_MENU_SELECT, Input::IT_NONE, 0, Input::AD_NEUTRAL);

@@ -70,6 +70,7 @@ DeviceConfig::DeviceConfig()
     m_enabled = true;
     m_plugged = 0;
     m_config_name= L"";
+    m_lookback_to_fireback = true;
 }   // DeviceConfig
 
 // ------------------------------------------------------------------------
@@ -288,6 +289,8 @@ void DeviceConfig::save (std::ofstream& stream)
 {
     stream << "enabled=\""
         << (m_enabled ? "true\"" : "false\"")
+        << " lookback-to-fireback=\""
+        << (m_lookback_to_fireback ? "true\"" : "false\"")
         << " configName=\""
         << StringUtils::xmlEncode(m_config_name)
         << "\">\n ";
@@ -311,6 +314,7 @@ bool DeviceConfig::load(const XMLNode *config)
 {
     config->get("name", &m_name);
     config->get("enabled", &m_enabled);
+    config->get("lookback-to-fireback", &m_lookback_to_fireback);
     config->getAndDecode("configName", &m_config_name);
     bool error = false;
     for(unsigned int i=0; i<config->getNumNodes(); i++)

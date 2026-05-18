@@ -229,7 +229,7 @@ void SkiddingAI::update(int ticks)
 {
     float dt = stk_config->ticks2Time(ticks);
     // This is used to enable firing an item backwards.
-    m_controls->setLookBack(false);
+    m_controls->setFireBack(false);
     m_controls->setNitro(false);
 
     // Don't do anything if there is currently a kart animations shown.
@@ -1156,7 +1156,7 @@ void SkiddingAI::handleItems(const float dt)
 
     if (m_superpower == RaceManager::SUPERPOWER_NOLOK_BOSS)
     {
-        m_controls->setLookBack(m_kart->getPowerup()->getType() ==
+        m_controls->setFireBack(m_kart->getPowerup()->getType() ==
                                    PowerupManager::POWERUP_BOWLING   );
 
         if( m_time_since_last_shot > 3.0f )
@@ -1209,7 +1209,7 @@ void SkiddingAI::handleItems(const float dt)
                                     m_ai_properties->m_shield_incoming_radius) )
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(false);
+                m_controls->setFireBack(false);
                 break;
             }
 
@@ -1225,7 +1225,7 @@ void SkiddingAI::handleItems(const float dt)
             if(m_distance_behind < 15.0f && m_distance_behind > 3.0f    )
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(true);
+                m_controls->setFireBack(true);
                 break;
             }
 
@@ -1238,7 +1238,7 @@ void SkiddingAI::handleItems(const float dt)
                                    == RaceManager::get()->getNumLaps()-1)
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(true);
+                m_controls->setFireBack(true);
                 break;
             }
             break;   // POWERUP_BUBBLEGUM
@@ -1287,7 +1287,7 @@ void SkiddingAI::handleItems(const float dt)
             m_controls->setFire( (fire_backwards && distance < 25.0f) ||
                                  (!fire_backwards && distance < 20.0f)  );
             if(m_controls->getFire())
-                m_controls->setLookBack(fire_backwards);
+                m_controls->setFireBack(fire_backwards);
             break;
         }   // POWERUP_CAKE
 
@@ -1339,7 +1339,7 @@ void SkiddingAI::handleItems(const float dt)
                                 m_time_since_last_shot > 3.0f &&
                                 (straight_behind || straight_ahead)             );
             if(m_controls->getFire())
-                m_controls->setLookBack(fire_backwards);
+                m_controls->setFireBack(fire_backwards);
             break;
         }   // POWERUP_BOWLING
 
@@ -1368,7 +1368,7 @@ void SkiddingAI::handleItems(const float dt)
             m_controls->setFire(distance < 30.0f                 ||
                                  m_time_since_last_shot > 10.0f    );
             if(m_controls->getFire())
-                m_controls->setLookBack(fire_backwards);
+                m_controls->setFireBack(fire_backwards);
             break;
         }   // POWERUP_PLUNGER
 

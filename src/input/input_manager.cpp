@@ -52,7 +52,6 @@
 #ifdef MOBILE_STK
 #include "states_screens/race_gui_multitouch.hpp"
 #endif
-#include "states_screens/state_manager.hpp"
 #include "utils/debug.hpp"
 #include "utils/string_utils.hpp"
 #include "utils/translation.hpp"
@@ -643,10 +642,10 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
 
     StateManager::ActivePlayer*   player = NULL;
     PlayerAction    action;
-    bool action_found = m_device_manager->translateInput(type, deviceID,
-                                                         button, axisDirection,
-                                                         &value, m_mode,
-                                                         &player, &action);
+    bool lookback_to_fireback;
+    bool action_found = m_device_manager->translateInput(type, deviceID, button, axisDirection,
+                                                         &value, m_mode, &player, &action,
+                                                         &lookback_to_fireback);
 
     // in menus, some keyboard keys are standard (before each player selected
     // their device). So if a key could not be mapped to any known binding,
@@ -812,40 +811,11 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
              !GUIEngine::ScreenKeyboard::isActive()                &&
              !RaceManager::get()->isWatchingReplay() && !is_nw_spectator)
         {
+            // Prevent null pointer crash
             if (player == NULL)
-            {
-                // Prevent null pointer crash
                 return;
-            }
 
-            // Find the corresponding PlayerKart from our ActivePlayer instance
-            Kart* pk = player->getKart();
-
-            if (pk == NULL)
-            {
-                Log::error("InputManager::dispatchInput", "Trying to process "
-                    "action for an unknown player");
-                return;
-            }
-
-            Controller* controller = pk->getController();
-            if (controller != NULL) controller->action(action, abs(value));
-#ifdef MOBILE_STK
-            if (type == Input::IT_STICKBUTTON || type == Input::IT_STICKMOTION)
-            {
-                if (UserConfigParams::m_multitouch_draw_gui &&
-                    irr_driver->getDevice()->isAccelerometerAvailable() &&
-                    World::getWorld() && World::getWorld()->getRaceGUI() &&
-                    World::getWorld()->getRaceGUI()->getMultitouchGUI() &&
-                    !World::getWorld()->getRaceGUI()->getMultitouchGUI()->isSpectatorMode() &&
-                    UserConfigParams::m_multitouch_controls != MULTITOUCH_CONTROLS_STEERING_WHEEL)
-                {
-                    // Disable accelerometer or gyroscope control if gamepad events trigger, see #4705
-                    UserConfigParams::m_multitouch_controls = MULTITOUCH_CONTROLS_STEERING_WHEEL;
-                    World::getWorld()->getRaceGUI()->recreateGUI();
-                }
-            }
-#endif
+            passActionToController(player, action, value, lookback_to_fireback);
         }
         else if (RaceManager::get() &&
             RaceManager::get()->isWatchingReplay() && !GUIEngine::ModalDialog::isADialogActive() &&
@@ -933,7 +903,55 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
         // Check static bindings...
         handleStaticAction( button, value );
     }
-}   // input
+}   // dispatchInput
+
+
+//-----------------------------------------------------------------------------
+void InputManager::passActionToController(StateManager::ActivePlayer* player,
+                                          PlayerAction action, int value,
+                                          bool lookback_to_fireback)
+{
+    // Find the corresponding PlayerKart from our ActivePlayer instance
+    Kart* pk = player->getKart();
+
+    if (pk == NULL)
+    {
+        Log::error("InputManager::dispatchInput", "Trying to process "
+            "action for an unknown player");
+        return;
+    }
+
+    Controller* controller = pk->getController();
+    if (controller != NULL)
+    {
+        if (action == PA_FIRE_BACK && lookback_to_fireback)
+            return; // ignore the fire back button if disabled
+
+        controller->action(action, abs(value));
+        // When firing back, we trigger two actions:
+        // a normal fire action and a fireback action.
+        if (lookback_to_fireback && action == PA_FIRE && controller->isLookingBack())
+            controller->action(PA_FIRE_BACK, abs(value));
+        else if (action == PA_FIRE_BACK)
+            controller->action(PA_FIRE, abs(value));
+    }
+#ifdef MOBILE_STK
+    // Disable accelerometer or gyroscope control if gamepad events trigger, see #4705
+    if (type == Input::IT_STICKBUTTON || type == Input::IT_STICKMOTION)
+    {
+        if (UserConfigParams::m_multitouch_draw_gui &&
+            irr_driver->getDevice()->isAccelerometerAvailable() &&
+            World::getWorld() && World::getWorld()->getRaceGUI() &&
+            World::getWorld()->getRaceGUI()->getMultitouchGUI() &&
+            !World::getWorld()->getRaceGUI()->getMultitouchGUI()->isSpectatorMode() &&
+            UserConfigParams::m_multitouch_controls != MULTITOUCH_CONTROLS_STEERING_WHEEL)
+        {
+            UserConfigParams::m_multitouch_controls = MULTITOUCH_CONTROLS_STEERING_WHEEL;
+            World::getWorld()->getRaceGUI()->recreateGUI();
+        }
+    }
+#endif
+}   // passActionToController
 
 //-----------------------------------------------------------------------------
 

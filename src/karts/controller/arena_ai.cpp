@@ -82,7 +82,7 @@ void ArenaAI::update(int ticks)
         return;
 
     // This is used to enable firing an item backwards.
-    m_controls->setLookBack(false);
+    m_controls->setFireBack(false);
     m_controls->setNitro(false);
 
     // Let the function below to reset it later
@@ -466,7 +466,7 @@ void ArenaAI::useItems(const float dt)
                                        getType() == Attachment::ATTACH_SWATTER)  )    )
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(false);
+                m_controls->setFireBack(false);
                 break;
             }
 
@@ -478,7 +478,7 @@ void ArenaAI::useItems(const float dt)
             if (dist_to_kart < 15.0f || m_time_since_last_shot > 15.0f)
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(true);
+                m_controls->setFireBack(true);
                 break;
             }
 
@@ -497,7 +497,7 @@ void ArenaAI::useItems(const float dt)
                 !m_closest_kart->isInvulnerable())
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(fire_behind);
+                m_controls->setFireBack(fire_behind);
                 break;
             }
 
@@ -518,7 +518,7 @@ void ArenaAI::useItems(const float dt)
                 !m_closest_kart->isInvulnerable())
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(fire_behind);
+                m_controls->setFireBack(fire_behind);
                 break;
             }
 
@@ -538,7 +538,7 @@ void ArenaAI::useItems(const float dt)
                  m_closest_kart->getSpeed() < m_kart->getSpeed())
             {
                 m_controls->setFire(true);
-                m_controls->setLookBack(false);
+                m_controls->setFireBack(false);
                 break;
             }
             break;

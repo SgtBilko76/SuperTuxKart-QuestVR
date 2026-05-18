@@ -164,7 +164,8 @@ public:
                          int *value /* inout */,
                          InputManager::InputDriverMode mode,
                          StateManager::ActivePlayer** player /* out */,
-                         PlayerAction* action /* out */ );
+                         PlayerAction* action /* out */,
+                         bool* lookback_to_fireback /*out */);
 
     void                clearLatestUsedDevice();
     InputDevice*        getLatestUsedDevice();

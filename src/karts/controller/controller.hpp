@@ -29,6 +29,7 @@ class BareNetworkString;
   * (this module thus contains the AIs)
   */
 
+#include "karts/controller/kart_control.hpp"
 #include "input/input.hpp"
 #include "states_screens/state_manager.hpp"
 
@@ -105,6 +106,8 @@ public:
     virtual KartControl* getControls() { return m_controls; }
     // ------------------------------------------------------------------------
     void setControls(KartControl* kc) { m_controls = kc; }
+    // ------------------------------------------------------------------------
+    bool isLookingBack() { return m_controls->getLookBack(); }
     // ------------------------------------------------------------------------
     /** Only local players can get achievements. */
     virtual bool  canGetAchievements () const { return false; }

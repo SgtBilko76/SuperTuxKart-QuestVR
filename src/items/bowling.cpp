@@ -178,8 +178,8 @@ void Bowling::onFireFlyable()
     m_has_hit_kart = false;
     float y_offset = 0.5f*m_owner->getKartLength() + m_extend.getZ()*0.5f;
 
-    // if the kart is looking backwards, release from the back
-    if( m_owner->getControls().getLookBack())
+    // if the kart requests it, fire backwards
+    if( m_owner->getControls().getFireBack())
     {
         y_offset   = -y_offset;
         m_speed    = -m_speed*2;

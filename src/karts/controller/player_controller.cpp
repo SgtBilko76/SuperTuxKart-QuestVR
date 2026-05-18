@@ -221,6 +221,9 @@ bool PlayerController::action(PlayerAction action, int value, bool dry_run)
     case PA_LOOK_BACK:
         SET_OR_TEST_GETTER(LookBack, value!=0);
         break;
+    case PA_FIRE_BACK:
+        SET_OR_TEST_GETTER(FireBack, value!=0);
+        break;
     case PA_DRIFT:
         if (value == 0)
         {

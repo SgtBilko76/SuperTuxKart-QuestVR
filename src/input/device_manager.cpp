@@ -387,7 +387,8 @@ bool DeviceManager::translateInput( Input::InputType type,
                                     int* value /* inout */,
                                     InputManager::InputDriverMode mode,
                                     StateManager::ActivePlayer** player /* out */,
-                                    PlayerAction* action /* out */ )
+                                    PlayerAction* action /* out */,
+                                    bool* lookback_to_fireback /*out */)
 {
     if (GUIEngine::getCurrentScreen() != NULL)
     {
@@ -433,6 +434,9 @@ bool DeviceManager::translateInput( Input::InputType type,
             break;
     };
 
+    *lookback_to_fireback = false;
+    if (device != NULL)
+        *lookback_to_fireback = device->lookbackToFireback();
 
     // Return true if input was successfully translated to an action and player
     if (device != NULL && abs(*value) > Input::MAX_VALUE/2)

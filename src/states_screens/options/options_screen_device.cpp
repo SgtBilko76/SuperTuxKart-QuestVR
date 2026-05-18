@@ -77,6 +77,10 @@ void OptionsScreenDevice::init()
 
     core::stringw label;
 
+    CheckBoxWidget* df = getWidget<CheckBoxWidget>("dedicated_fireback");
+    bool has_dedicated_fireback = m_config->hasDedicatedFireback();
+    df->setState(has_dedicated_fireback);
+
     CheckBoxWidget* ff = getWidget<CheckBoxWidget>("force_feedback");
     ff->setVisible(!m_config->isKeyboard());
     getWidget("force_feedback_text")->setVisible(!m_config->isKeyboard());
@@ -166,6 +170,7 @@ void OptionsScreenDevice::init()
     addListItem(actions, PA_NITRO);
     addListItem(actions, PA_DRIFT);
     addListItem(actions, PA_LOOK_BACK);
+    addListItem(actions, PA_FIRE_BACK);
     addListItem(actions, PA_RESCUE);
     addListItem(actions, PA_PAUSE_RACE);
 
@@ -267,6 +272,9 @@ void OptionsScreenDevice::updateInputButtons()
 
     //I18N: Key binding name
     renameRow(actions, i++, _("Look Back"), PA_LOOK_BACK);
+
+    //I18N: Key binding name
+    renameRow(actions, i++, _("Fire Back"), PA_FIRE_BACK);
 
     //I18N: Key binding name
     renameRow(actions, i++, _("Rescue"), PA_RESCUE);
@@ -626,6 +634,12 @@ void OptionsScreenDevice::eventCallback(Widget* widget,
         
         // Prefill the textbox with the current configuration name
         dialog->getTextField()->setText(the_config->getConfigName());
+    }
+    else if (name == "dedicated_fireback")
+    {
+        bool status = getWidget<CheckBoxWidget>("dedicated_fireback")->getState();
+        m_config->setDedicatedFireback(status);
+        input_manager->getDeviceManager()->save();
     }
     else if (name == "force_feedback")
     {

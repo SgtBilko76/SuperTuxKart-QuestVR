@@ -49,17 +49,20 @@ private:
     bool  m_rescue;
     /** True if fire is selected. */
     bool  m_fire;
-    /** True if the kart looks (and shoots) backwards. */
+    /** True if backwards firing is selected. */
+    bool  m_fire_back;
+    /** True if the camera should look back. */
     bool  m_look_back;
 public:
     void setSteer(float f);
     void setAccel(float f);
-    void setBrake(bool b);
-    void setNitro(bool b);
+    void setBrake(bool b) { m_brake = b; }
+    void setNitro(bool b) { m_nitro = b; }
     void setSkidControl(SkidControl sc);
-    void setRescue(bool b);
-    void setFire(bool b);
-    void setLookBack(bool b);
+    void setRescue(bool b) { m_rescue = b; }
+    void setFire(bool b) { m_fire = b; }
+    void setFireBack(bool b) { m_fire_back = b; }
+    void setLookBack(bool b) { m_look_back = b; }
 
     // ------------------------------------------------------------------------
     KartControl()
@@ -77,11 +80,12 @@ public:
         m_skid      = SC_NONE;
         m_rescue    = false;
         m_fire      = false;
+        m_fire_back = false;
         m_look_back = false;
     }   // reset
     // ------------------------------------------------------------------------
     /** Tests if two KartControls are equal.
-      */
+      * TODO: find where this is used, if it is */
     bool operator==(const KartControl &other)
     {
         return m_steer     == other.m_steer   &&
@@ -91,7 +95,8 @@ public:
                m_skid      == other.m_skid    &&
                m_rescue    == other.m_rescue  &&
                m_fire      == other.m_fire    &&
-               m_look_back == other.m_look_back;
+               m_fire_back == other.m_fire_back &&
+               m_look_back == other.m_look_back;;
     }    // operator==
     // ------------------------------------------------------------------------
     /** Copies the important data from this objects into a memory buffer. */
@@ -100,14 +105,16 @@ public:
     /** Restores this object from a previously saved memory  buffer. */
     void rewindTo(BareNetworkString *buffer);
     // ------------------------------------------------------------------------
-    /** Compresses all buttons into a single byte. */
+    /** Compresses all buttons into a single byte. 
+     * Look back is only used for local state so we don't transmit it
+     * (The conversion of lookback + fire into fire-back is done earlier) */
     char getButtonsCompressed() const
     {
         return  (m_brake     ?  1 : 0)
               + (m_nitro     ?  2 : 0)
               + (m_rescue    ?  4 : 0)
               + (m_fire      ?  8 : 0)
-              + (m_look_back ? 16 : 0)
+              + (m_fire_back ? 16 : 0)
               + (m_skid<<5);             // m_skid is in {0,1,2,3}
     }   // getButtonsCompressed
     // ------------------------------------------------------------------------
@@ -120,7 +127,7 @@ public:
         m_nitro     = (c &  2) != 0;
         m_rescue    = (c &  4) != 0;
         m_fire      = (c &  8) != 0;
-        m_look_back = (c & 16) != 0;
+        m_fire_back = (c & 16) != 0;
         m_skid      = (SkidControl)((c & 96) >> 5);
     }   // setButtonsCompressed
     // ------------------------------------------------------------------------
@@ -134,7 +141,7 @@ public:
     bool getBrake() const { return m_brake; }
     // ------------------------------------------------------------------------
     /** Returns if the kart activates nitro. */
-    bool  getNitro() const { return m_nitro; }
+    bool getNitro() const { return m_nitro; }
     // ------------------------------------------------------------------------
     /** Returns the skidding control state: SC_NONE: not pressed;
      *  SC_NO_DIRECTION: pressed, but no steering;
@@ -144,11 +151,14 @@ public:
     /** Returns true if the kart triggered rescue. */
     bool getRescue() const { return m_rescue; }
     // ------------------------------------------------------------------------
-    /** Returns if fire is selected. */
+    /** Returns if fire is selected. Also true if firing backwards. */
     bool getFire() const { return m_fire; }
     // ------------------------------------------------------------------------
-    /** Returns if the kart wants to look back (which also implies that it
-     *  will fire backwards. */
+    /** Returns if the kart wants to fire backwards. getFire needs
+     * to also be true for a powerup to be actually fired. */
+    bool getFireBack() const { return m_fire_back; }
+    // ------------------------------------------------------------------------
+    /** Returns if the camera is looking backwards. */
     bool getLookBack() const { return m_look_back; }
 };
 

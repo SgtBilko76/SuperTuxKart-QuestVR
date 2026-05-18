@@ -380,8 +380,8 @@ int Powerup::useBubblegum(bool mini)
     ItemManager* im = Track::getCurrentTrack()->getItemManager();
     const KartProperties *kp = m_kart->getKartProperties();
 
-    // use the bubble gum the traditional way, if the kart is looking back
-    if (m_kart->getControls().getLookBack())
+    // use the bubble gum the traditional way, if backwards use is requested
+    if (m_kart->getControls().getFireBack())
     {
         Item *new_item = im->dropNewItem(mini ? Item::ITEM_BUBBLEGUM_SMALL :
                                                 Item::ITEM_BUBBLEGUM, m_kart);

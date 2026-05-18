@@ -233,6 +233,7 @@ void WiimoteManager::setWiimoteBindings(GamepadConfig* gamepad_config)
     gamepad_config->setBinding(PA_DRIFT,        Input::IT_STICKBUTTON, getButton(WIIMOTE_BUTTON_B));
     gamepad_config->setBinding(PA_RESCUE,       Input::IT_STICKBUTTON, getButton(WIIMOTE_BUTTON_PLUS));
     gamepad_config->setBinding(PA_LOOK_BACK,    Input::IT_STICKBUTTON, getButton(WIIMOTE_BUTTON_DOWN));
+    gamepad_config->setBinding(PA_FIRE_BACK,    Input::IT_NONE, 0);
     gamepad_config->setBinding(PA_PAUSE_RACE,   Input::IT_STICKBUTTON, getButton(WIIMOTE_BUTTON_HOME));
 
     gamepad_config->setBinding(PA_MENU_UP,      Input::IT_STICKBUTTON, getButton(WIIMOTE_BUTTON_RIGHT));

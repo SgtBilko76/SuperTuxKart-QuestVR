@@ -41,46 +41,12 @@ void KartControl::setAccel(float f)
 }   // setAccel
 
 // ----------------------------------------------------------------------------
-/** Sets if the kart is braking. */
-void KartControl::setBrake(bool b)
-{
-    m_brake           = b;
-}   // setBrake
-
-// ----------------------------------------------------------------------------
-/** Sets if the kart activates nitro. */
-void KartControl::setNitro(bool b)
-{
-    m_nitro        = b;
-}   // setNitro
-
-// ----------------------------------------------------------------------------
 /** Sets the skid control for this kart. */
 void KartControl::setSkidControl(SkidControl sc)
 {
     m_skid        = sc;
 }   // seSkidControl
 
-// ----------------------------------------------------------------------------
-/** Returns if this kart wants to get rescued. */
-void KartControl::setRescue(bool b)
-{
-    m_rescue        = b;
-}   // setRescue
-
-// ----------------------------------------------------------------------------
-/** Sets if the kart wants to fire. */
-void KartControl::setFire(bool b)
-{
-    m_fire        = b;
-}   // setFire
-
-// ----------------------------------------------------------------------------
-/** Sets if the kart wants to look (and therefore also fires) backwards. */
-void KartControl::setLookBack(bool b)
-{
-    m_look_back   = b;
-}   // setLookBack
 // ----------------------------------------------------------------------------
 /** Copies the important data from this objects into a memory buffer. */
 void KartControl::saveState(BareNetworkString *buffer) const

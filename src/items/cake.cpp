@@ -91,7 +91,7 @@ void Cake::onFireFlyable(bool mini)
     btQuaternion q = m_owner->getTrans().getRotation();
     gravity_vector = Vec3(0, -1, 0).rotate(q.getAxis(), q.getAngle());
     gravity_vector = gravity_vector.normalize() * m_gravity;
-    const bool  backwards = m_owner->getControls().getLookBack();
+    const bool  backwards = m_owner->getControls().getFireBack();
     m_mini = mini;
 
     if (m_node != NULL) // It can be null when rewinding

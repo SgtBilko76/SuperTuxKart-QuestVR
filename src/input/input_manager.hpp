@@ -29,6 +29,7 @@
 #include "guiengine/event_handler.hpp"
 #include "input/input.hpp"
 #include "utils/no_copy.hpp"
+#include "states_screens/state_manager.hpp"
 
 #ifndef SERVER_ONLY
 #include <SDL_events.h>
@@ -77,6 +78,9 @@ private:
     void   handleStaticAction(int id0, int value);
     void   inputSensing(Input::InputType type, int deviceID, int btnID,
                         Input::AxisDirection axisDirection,  int value);
+    void   passActionToController(StateManager::ActivePlayer* player,
+                                PlayerAction action, int value,
+                                bool lookback_to_fireback);
 
 #ifndef SERVER_ONLY
     std::map<int, std::unique_ptr<SDLController> > m_sdl_controller;

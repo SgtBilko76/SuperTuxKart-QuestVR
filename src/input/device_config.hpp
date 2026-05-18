@@ -55,6 +55,11 @@ private:
     /** Name of this configuration (given by the user). */
     irr::core::stringw m_config_name;
 
+    /** If true, firing back is done by a combination of lookback + fire
+     * if false, fire always fires forward and a dedicated fireback button
+     * is used to fire backwards */
+    bool m_lookback_to_fireback;
+
 protected:
 
     Binding  m_bindings[PA_COUNT];
@@ -172,6 +177,12 @@ public:
     // ------------------------------------------------------------------------
     /** Returns the name of this device configuration */
     void setConfigName( irr::core::stringw config_name ) { m_config_name = config_name; }
+
+    // ------------------------------------------------------------------------
+    /** Returns if this config uses a dedicated fireback input */
+    bool hasDedicatedFireback() const { return !m_lookback_to_fireback; }
+    // ------------------------------------------------------------------------
+    void setDedicatedFireback(bool status) { m_lookback_to_fireback = !status; }
 };   // class DeviceConfig
 
 #endif
