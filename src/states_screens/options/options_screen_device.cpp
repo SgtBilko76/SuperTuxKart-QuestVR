@@ -304,99 +304,13 @@ void OptionsScreenDevice::updateInputButtons()
     //I18N: Key binding name
     renameRow(actions, i++, _("Cancel/Back"), PA_MENU_CANCEL);
 
-
+    // menu keys and game keys can overlap, no problem, so we check separately
     bool conflicts_between = false;
     bool conflicts_inside  = false;
-    // ---- make sure there are no binding conflicts
-    // (same key used for two actions)
-    std::set<irr::core::stringw> currently_used_keys;
-    for (PlayerAction action = PA_FIRST_GAME_ACTION;
-         action <= PA_LAST_GAME_ACTION;
-         action=PlayerAction(action+1))
-    {
-        if (!m_config->hasDedicatedFireback() && action == PA_FIRE_BACK)
-            continue;
-
-        const irr::core::stringw item = m_config->getMappingIdString(action);
-        if (currently_used_keys.find(item) == currently_used_keys.end())
-        {
-            if (item == "none") 
-            {
-                // Use the theme-defined emphasis-color to bring attention to the missing binding
-                actions->emphasisItem(KartActionStrings[action]);
-                continue;
-            }
-            currently_used_keys.insert( item );
-            if (m_config->isKeyboard()
-                && conflictsBetweenKbdConfig(action, PA_FIRST_GAME_ACTION,
-                                             PA_LAST_GAME_ACTION))
-            {
-                conflicts_between = true;
-                actions->markItemBlue (KartActionStrings[action]);
-            }
-        }
-        else
-        {
-            // binding conflict!
-            actions->markItemRed( KartActionStrings[action] );
-
-            // also mark others
-            for (PlayerAction others = PA_FIRST_GAME_ACTION;
-                 others < action; others=PlayerAction(others+1))
-            {
-                const irr::core::stringw others_item =
-                    m_config->getMappingIdString(others);
-                if (others_item == item)
-                {
-                    conflicts_inside = true;
-                    actions->markItemRed( KartActionStrings[others] );
-                }
-            }
-
-            //actions->renameItem( KartActionStrings[action],
-            //                    _("Binding Conflict!") );
-        }
-    }
-
-    // menu keys and game keys can overlap, no problem, so forget game keys
-    // before checking menu keys
-    currently_used_keys.clear();
-    for (PlayerAction action = PA_FIRST_MENU_ACTION;
-         action <= PA_LAST_MENU_ACTION;
-         action=PlayerAction(action+1))
-    {
-        const irr::core::stringw item = m_config->getBindingAsString(action);
-        if (currently_used_keys.find(item) == currently_used_keys.end())
-        {
-            currently_used_keys.insert( item );
-            if (m_config->isKeyboard()
-                && conflictsBetweenKbdConfig(action, PA_FIRST_MENU_ACTION,
-                                             PA_LAST_MENU_ACTION))
-            {
-                conflicts_between = true;
-                actions->markItemBlue (KartActionStrings[action]);
-            }
-        }
-        else   // existing key
-        {
-            // binding conflict!
-            actions->markItemRed( KartActionStrings[action] );
-
-            // also mark others
-            for (PlayerAction others = PA_FIRST_MENU_ACTION;
-                 others < action; others=PlayerAction(others+1))
-            {
-                const irr::core::stringw others_item =
-                    m_config->getBindingAsString(others);
-                if (others_item == item)
-                {
-                    conflicts_inside = true;
-                    actions->markItemRed( KartActionStrings[others] );
-                }
-            }   // for others < action
-
-        }   // if existing key
-    }   // for action <= PA_LAST_MENU_ACTION;
+    checkForConflicts(actions, PA_FIRST_GAME_ACTION, PA_LAST_GAME_ACTION,
+                      &conflicts_between, &conflicts_inside);
+    checkForConflicts(actions, PA_FIRST_MENU_ACTION, PA_LAST_MENU_ACTION,
+                      &conflicts_between, &conflicts_inside);
 
     core::stringw warning;
     if (conflicts_between)
@@ -411,6 +325,60 @@ void OptionsScreenDevice::updateInputButtons()
         MessageQueue::add(MessageQueue::MT_ERROR, warning);
 
 }   // updateInputButtons
+
+// -----------------------------------------------------------------------------
+
+void OptionsScreenDevice::checkForConflicts(GUIEngine::ListWidget* actions,
+    PlayerAction check_first, PlayerAction check_last,
+    bool* conflicts_between, bool* conflicts_inside)
+{
+    std::set<irr::core::stringw> currently_used_keys;
+    // ---- make sure there are no binding conflicts
+    // (same key used for two actions)
+    for (PlayerAction action = check_first;
+         action <= check_last;
+         action=PlayerAction(action+1))
+    {
+        if (!m_config->hasDedicatedFireback() && action == PA_FIRE_BACK)
+            continue;
+    
+        const irr::core::stringw item = m_config->getMappingIdString(action);
+        if (currently_used_keys.find(item) == currently_used_keys.end())
+        {
+            if (item == "none") 
+            {
+                // Use the theme-defined emphasis-color to bring attention to the missing binding
+                actions->emphasisItem(KartActionStrings[action]);
+                continue;
+            }
+            currently_used_keys.insert( item );
+            if (m_config->isKeyboard()
+                && conflictsBetweenKbdConfig(action, check_first, check_last))
+            {
+                *conflicts_between = true;
+                actions->markItemBlue (KartActionStrings[action]);
+            }
+        }
+        else // existing key
+        {
+            // binding conflict!
+            actions->markItemRed( KartActionStrings[action] );
+
+            // also mark others
+            for (PlayerAction others = check_first;
+                 others < action; others=PlayerAction(others+1))
+            {
+                const irr::core::stringw others_item =
+                    m_config->getMappingIdString(others);
+                if (others_item == item)
+                {
+                    *conflicts_inside = true;
+                    actions->markItemRed( KartActionStrings[others] );
+                }
+            } // for others < action
+        } // if existing key
+    } // for action <= check_last
+}   // checkForConflicts
 
 // -----------------------------------------------------------------------------
 

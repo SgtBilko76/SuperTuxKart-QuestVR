@@ -61,7 +61,9 @@ class OptionsScreenDevice : public GUIEngine::Screen,
         const char* id,
         const core::stringw& text);
     void loadList(bool select_list);
-
+    void checkForConflicts(GUIEngine::ListWidget* actions,
+            PlayerAction check_first, PlayerAction check_last,
+            bool* conflicts_between, bool* conflicts_inside);
 public:
     friend class GUIEngine::ScreenSingleton<OptionsScreenDevice>;
 
