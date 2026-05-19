@@ -60,6 +60,7 @@ class OptionsScreenDevice : public GUIEngine::Screen,
     void addListItemSubheader(GUIEngine::ListWidget* actions,
         const char* id,
         const core::stringw& text);
+    void loadList(bool select_list);
 
 public:
     friend class GUIEngine::ScreenSingleton<OptionsScreenDevice>;

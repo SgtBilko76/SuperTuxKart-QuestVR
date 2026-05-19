@@ -157,11 +157,25 @@ void OptionsScreenDevice::init()
     LabelWidget* label_widget = getWidget<LabelWidget>("title");
     label_widget->setText( m_config->getName().c_str(), false );
 
+    loadList(true /* select list */);
+
+    // Disable deleting or disabling configuration mid-race
+    if (StateManager::get()->getGameState() == GUIEngine::INGAME_MENU)
+    {
+        delete_button->setActive(false);
+        disable_toggle->setActive(false);
+    }
+}   // init
+
+void OptionsScreenDevice::loadList(bool select_list)
+{
     // ---- create list skeleton (right number of items, right internal names)
     //      their actualy contents will be adapted as needed after
 
     ListWidget* actions = getWidget<GUIEngine::ListWidget>("actions");
     assert( actions != NULL );
+
+    actions->clear();
 
     //I18N: Key binding section
     addListItemSubheader(actions, "game_keys_section", _("Game Keys"));
@@ -173,7 +187,8 @@ void OptionsScreenDevice::init()
     addListItem(actions, PA_NITRO);
     addListItem(actions, PA_DRIFT);
     addListItem(actions, PA_LOOK_BACK);
-    addListItem(actions, PA_FIRE_BACK);
+    if (m_config->hasDedicatedFireback())
+        addListItem(actions, PA_FIRE_BACK);
     addListItem(actions, PA_RESCUE);
     addListItem(actions, PA_PAUSE_RACE);
 
@@ -190,16 +205,12 @@ void OptionsScreenDevice::init()
     updateInputButtons();
 
     // Focus the list and select its first item
-    actions->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
-    actions->setSelectionID(0);
-
-    // Disable deleting or disabling configuration mid-race
-    if (StateManager::get()->getGameState() == GUIEngine::INGAME_MENU)
+    if (select_list)
     {
-        delete_button->setActive(false);
-        disable_toggle->setActive(false);
+        actions->setFocusForPlayer(PLAYER_ID_GAME_MASTER);
+        actions->setSelectionID(0);
     }
-}   // init
+}   // loadList
 
 // -----------------------------------------------------------------------------
 
@@ -254,34 +265,27 @@ void OptionsScreenDevice::updateInputButtons()
 
     //I18N: Key binding name
     renameRow(actions, i++, _("Steer Left"), PA_STEER_LEFT);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Steer Right"), PA_STEER_RIGHT);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Accelerate"), PA_ACCEL);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Brake / Reverse"), PA_BRAKE);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Fire"), PA_FIRE);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Nitro"), PA_NITRO);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Skidding"), PA_DRIFT);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Look Back"), PA_LOOK_BACK);
-
-    //I18N: Key binding name
-    renameRow(actions, i++, _("Fire Back"), PA_FIRE_BACK);
-
+    if (m_config->hasDedicatedFireback())
+    {
+        //I18N: Key binding name
+        renameRow(actions, i++, _("Fire Back"), PA_FIRE_BACK);
+    }
     //I18N: Key binding name
     renameRow(actions, i++, _("Rescue"), PA_RESCUE);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Pause Game"), PA_PAUSE_RACE);
 
@@ -289,22 +293,16 @@ void OptionsScreenDevice::updateInputButtons()
 
     //I18N: Key binding name
     renameRow(actions, i++, _("Up"), PA_MENU_UP);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Down"), PA_MENU_DOWN);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Left"), PA_MENU_LEFT);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Right"), PA_MENU_RIGHT);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Select"), PA_MENU_SELECT);
-
     //I18N: Key binding name
     renameRow(actions, i++, _("Cancel/Back"), PA_MENU_CANCEL);
-
 
 
     bool conflicts_between = false;
@@ -316,6 +314,9 @@ void OptionsScreenDevice::updateInputButtons()
          action <= PA_LAST_GAME_ACTION;
          action=PlayerAction(action+1))
     {
+        if (!m_config->hasDedicatedFireback() && action == PA_FIRE_BACK)
+            continue;
+
         const irr::core::stringw item = m_config->getMappingIdString(action);
         if (currently_used_keys.find(item) == currently_used_keys.end())
         {
@@ -643,6 +644,7 @@ void OptionsScreenDevice::eventCallback(Widget* widget,
         bool status = getWidget<CheckBoxWidget>("dedicated_fireback")->getState();
         m_config->setDedicatedFireback(status);
         input_manager->getDeviceManager()->save();
+        loadList(false /* select list */);
     }
     else if (name == "force_feedback")
     {
