@@ -612,7 +612,7 @@ namespace Scripting
                                                call_conv); assert(r >= 0);
 
             // TrackObject
-            r = engine->RegisterObjectMethod("TrackObject", "void setEnabled(bool status, bool ignore_lock)",
+            r = engine->RegisterObjectMethod("TrackObject", "void setEnabled(bool status, bool ignore_lock = true)",
                                              mp ? WRAP_MFN(::TrackObject, setEnabled) : asMETHOD(::TrackObject, setEnabled),
                                              call_conv_thiscall); assert(r >= 0);
                                              
