@@ -81,13 +81,17 @@ CheckLine::CheckLine(const XMLNode &node,  unsigned int index)
             normal = Graph::get()->getQuad(sector)->getNormal();
     }
 
-    // How much a kart is allowed to be under the minimum height of a
-    // quad and still considered to be able to cross it.
-    float under_min_height = 1.0f;
+    // How much a kart is allowed to be under the reference height of a
+    // checkline and still be considered able to cross it.
+    float under_min_height = 2.0f;
+    if(node.get("height-down", &under_min_height))
+        under_min_height = std::max(under_min_height, 0.0f); // Prevent negative values
 
-    // How much a kart is allowed to be over the minimum height of a
-    // quad and still considered to be able to cross it.
-    float over_min_height = 4.0f;
+    // How much a kart is allowed to be over the reference height of a
+    // checkline and still be considered able to cross it.
+    float over_min_height = 10.0f;
+    if(node.get("height-up", &over_min_height))
+        over_min_height = std::max(over_min_height, 1.0f); // Prevent values <= 1
 
     m_check_plane[0].pointA = Vec3(m_left_point + (normal *
         under_min_height * -1.0f)).toIrrVector();
