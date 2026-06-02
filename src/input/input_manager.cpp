@@ -187,8 +187,10 @@ void InputManager::handleJoystick(SDL_Event& event)
         }
         case SDL_JOYDEVICEREMOVED:
         {
-            m_gamepads_timer.erase(
-                m_sdl_controller.at(event.jdevice.which)->getInstanceID());
+            int deviceID = m_sdl_controller.at(event.jdevice.which)->getInstanceID();
+            m_gamepads_timer.erase(deviceID);
+            m_gamepads_held_axis.erase(deviceID);
+            m_gamepads_held_value.erase(deviceID);
             m_sdl_controller.erase(event.jdevice.which);
             break;
         }
@@ -253,9 +255,17 @@ void InputManager::update(float dt)
     {
         it->second -= dt;
         if (it->second < 0)
-            it = m_gamepads_timer.erase(it);
+        {
+            // If holding a stick active in a menu, we generate new inputs
+            dispatchInput(Input::IT_STICKMOTION, it->first /* device ID */,
+                          m_gamepads_held_axis[it->first], Input::AD_NEUTRAL,
+                          m_gamepads_held_value[it->first]);
+            m_gamepads_timer[it->first] = 0.1f;
+        }
         else
+        {
             it++;
+        }
     }
 
 #ifndef SERVER_ONLY
@@ -611,6 +621,16 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
     if (!irr_driver->getDevice()->getEventReceiver())
         return;
 
+    // Reset the timer when the axis which triggered the timer is released
+    if (type == Input::IT_STICKMOTION && abs(value) < Input::MAX_VALUE * 2 / 3 &&
+        m_gamepads_timer.find(deviceID) != m_gamepads_timer.end() &&
+        button == m_gamepads_held_axis[deviceID])
+    {
+        m_gamepads_timer.erase(deviceID);
+        m_gamepads_held_axis.erase(deviceID);
+        m_gamepads_held_value.erase(deviceID);
+    }
+
     // Act different in input sensing mode.
     if (m_mode == INPUT_SENSE_KEYBOARD ||
         m_mode == INPUT_SENSE_GAMEPAD)
@@ -858,10 +878,6 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
         // ... when in menus
         else
         {
-            // reset timer when released
-            if (abs(value) == 0 && type == Input::IT_STICKMOTION)
-                m_gamepads_timer.erase(deviceID);
-
             // When in master-only mode, we can safely assume that players
             // are set up, contrarly to early menus where we accept every
             // input because players are not set-up yet
@@ -887,45 +903,51 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
             }
 
             // menu input
-            if (m_gamepads_timer.find(deviceID) == m_gamepads_timer.end())
+
+            // Throttle gamepad stick inputs
+            if (type == Input::IT_STICKMOTION &&
+                m_gamepads_timer.find(deviceID) != m_gamepads_timer.end() &&
+                m_gamepads_timer[deviceID] > 0.0f)
             {
-                if (type == Input::IT_STICKMOTION &&
-                    abs(value) > Input::MAX_VALUE * 2 / 3)
-                {
-                    m_gamepads_timer[deviceID] = 0.25f;
-                }
-
-                if (is_nw_spectator)
-                {
-                    cl->changeSpectateTarget(action, abs(value), type);
-                    return;
-                }
-
-                // player may be NULL in early menus, before player setup has
-                // been performed
-                int playerID = (player == NULL ? 0 : player->getID());
-
-                // If only the master player can act, and this player is not
-                // the master, ignore his input
-                if (m_device_manager->getAssignMode() == ASSIGN &&
-                    m_master_player_only &&
-                    playerID != PLAYER_ID_GAME_MASTER)
-                {
-                    //I18N: message shown when a player that isn't game master
-                    //I18N: tries to modify options that only the game master
-                    //I18N: is allowed to
-                    GUIEngine::showMessage(
-                        _("Only the Game Master may act at this point!"));
-                    return;
-                }
-
-                // all is good, pass the translated input event on to the
-                // event handler
-                GUIEngine::EventHandler::get()
-                    ->processGUIAction(action, deviceID, abs(value), type,
-                                       playerID);
+                return;
             }
-        }
+
+            if (type == Input::IT_STICKMOTION &&
+                abs(value) > Input::MAX_VALUE * 2 / 3)
+            {
+                m_gamepads_timer[deviceID] = 0.2f;
+                m_gamepads_held_axis[deviceID] = button;
+                m_gamepads_held_value[deviceID] = value;
+            }
+
+            if (is_nw_spectator)
+            {
+                cl->changeSpectateTarget(action, abs(value), type);
+                return;
+            }
+
+            // player may be NULL in early menus, before player setup has
+            // been performed
+            int playerID = (player == NULL ? 0 : player->getID());
+
+            // If only the master player can act, and this player is not
+            // the master, ignore his input
+            if (m_device_manager->getAssignMode() == ASSIGN &&
+                m_master_player_only && playerID != PLAYER_ID_GAME_MASTER)
+            {
+                //I18N: message shown when a player that isn't game master
+                //I18N: tries to modify options that only the game master
+                //I18N: is allowed to
+                GUIEngine::showMessage(
+                    _("Only the Game Master may act at this point!"));
+                return;
+            }
+
+            // all is good, pass the translated input event on to the
+            // event handler
+            GUIEngine::EventHandler::get()
+                ->processGUIAction(action, deviceID, abs(value), type, playerID);
+        } // When in menus
     }
     else if (type == Input::IT_KEYBOARD)
     {
@@ -977,6 +999,7 @@ EventPropagation InputManager::input(const SEvent& event)
         {
             if (!event.JoystickEvent.IsAxisChanged(axis_id))
                 continue;
+
             int value = event.JoystickEvent.Axis[axis_id];
 
             if (UserConfigParams::m_gamepad_debug)
@@ -993,11 +1016,9 @@ EventPropagation InputManager::input(const SEvent& event)
         GamePadDevice* gp =
             getDeviceManager()->getGamePadFromIrrID(event.JoystickEvent.Joystick);
 
-        if (gp == NULL)
-        {
-            // Prevent null pointer crash
+        // Prevent a null pointer crash
+        if (gp == NULL)            
             return EVENT_BLOCK;
-        }
 
         for(int i=0; i<gp->getNumberOfButtons(); i++)
         {

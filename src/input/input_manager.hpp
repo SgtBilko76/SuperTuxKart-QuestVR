@@ -55,6 +55,8 @@ public:
 
     // to put a delay before a new gamepad axis move is considered in menu
     std::map<int, float> m_gamepads_timer;
+    std::map<int, int> m_gamepads_held_axis;
+    std::map<int, int> m_gamepads_held_value;
 
 private:
 
