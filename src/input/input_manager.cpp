@@ -189,8 +189,9 @@ void InputManager::handleJoystick(SDL_Event& event)
         {
             int deviceID = m_sdl_controller.at(event.jdevice.which)->getInstanceID();
             m_gamepads_timer.erase(deviceID);
-            m_gamepads_held_axis.erase(deviceID);
+            m_gamepads_held_input_id.erase(deviceID);
             m_gamepads_held_value.erase(deviceID);
+            m_gamepads_held_type.erase(deviceID);
             m_sdl_controller.erase(event.jdevice.which);
             break;
         }
@@ -257,8 +258,8 @@ void InputManager::update(float dt)
         if (it->second < 0)
         {
             // If holding a stick active in a menu, we generate new inputs
-            dispatchInput(Input::IT_STICKMOTION, it->first /* device ID */,
-                          m_gamepads_held_axis[it->first], Input::AD_NEUTRAL,
+            dispatchInput(m_gamepads_held_type[it->first], it->first /* device ID */,
+                          m_gamepads_held_input_id[it->first], Input::AD_NEUTRAL,
                           m_gamepads_held_value[it->first]);
             m_gamepads_timer[it->first] = 0.1f;
         }
@@ -622,13 +623,15 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
         return;
 
     // Reset the timer when the axis which triggered the timer is released
-    if (type == Input::IT_STICKMOTION && abs(value) < Input::MAX_VALUE * 2 / 3 &&
+    if (abs(value) < Input::MAX_VALUE * 2 / 3 &&
         m_gamepads_timer.find(deviceID) != m_gamepads_timer.end() &&
-        button == m_gamepads_held_axis[deviceID])
+        type   == m_gamepads_held_type[deviceID] &&
+        button == m_gamepads_held_input_id[deviceID])
     {
         m_gamepads_timer.erase(deviceID);
-        m_gamepads_held_axis.erase(deviceID);
+        m_gamepads_held_input_id.erase(deviceID);
         m_gamepads_held_value.erase(deviceID);
+        m_gamepads_held_type.erase(deviceID);
     }
 
     // Act different in input sensing mode.
@@ -912,12 +915,16 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
                 return;
             }
 
-            if (type == Input::IT_STICKMOTION &&
-                abs(value) > Input::MAX_VALUE * 2 / 3)
+            bool is_nav_action = action == PA_MENU_DOWN || action == PA_MENU_UP ||
+                                 action == PA_MENU_LEFT || action == PA_MENU_RIGHT;
+
+            if ((type == Input::IT_STICKMOTION && abs(value) > Input::MAX_VALUE * 2 / 3) ||
+                (type == Input::IT_STICKBUTTON && is_nav_action))
             {
                 m_gamepads_timer[deviceID] = 0.2f;
-                m_gamepads_held_axis[deviceID] = button;
+                m_gamepads_held_input_id[deviceID] = button;
                 m_gamepads_held_value[deviceID] = value;
+                m_gamepads_held_type[deviceID] = type;
             }
 
             if (is_nw_spectator)
