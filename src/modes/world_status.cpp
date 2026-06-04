@@ -209,6 +209,13 @@ void WorldStatus::update(int ticks)
  */
 void WorldStatus::updateTime(int ticks)
 {
+    bool is_artist_quick_start = UserConfigParams::m_artist_debug_mode &&
+                    UserConfigParams::m_artist_debug_quick_start &&
+                    !NetworkConfig::get()->isNetworking() &&
+                    (RaceManager::get()->getNumberOfKarts() -
+                    RaceManager::get()->getNumSpareTireKarts()) == 1 &&
+                    RaceManager::get()->getTrackName() != "tutorial";
+
     switch (m_phase.load())
     {
         // Note: setup phase must be a separate phase, since the race_manager
@@ -234,14 +241,8 @@ void WorldStatus::updateTime(int ticks)
         case TRACK_INTRO_PHASE:
             m_auxiliary_ticks++;
 
-            if (UserConfigParams::m_artist_debug_mode &&
-                !NetworkConfig::get()->isNetworking() &&
-                RaceManager::get()->getNumberOfKarts() -
-                RaceManager::get()->getNumSpareTireKarts() == 1 &&
-                RaceManager::get()->getTrackName() != "tutorial")
-            {
+            if (is_artist_quick_start)
                 m_auxiliary_ticks += 6;
-            }
 
             if (!m_play_track_intro_sound)
             {
@@ -333,14 +334,8 @@ void WorldStatus::updateTime(int ticks)
 
             // In artist debug mode, when without opponents, skip the
             // ready/set/go counter faster
-            if (UserConfigParams::m_artist_debug_mode     &&
-                !NetworkConfig::get()->isNetworking()     &&
-                RaceManager::get()->getNumberOfKarts() -
-                RaceManager::get()->getNumSpareTireKarts() == 1 &&
-                RaceManager::get()->getTrackName() != "tutorial")
-            {
+            if (is_artist_quick_start)
                 m_auxiliary_ticks += 6;
-            }
 
             return;   // Do not increase time
         case SET_PHASE:
@@ -364,12 +359,7 @@ void WorldStatus::updateTime(int ticks)
                 onGo();
                 // In artist debug mode, when without opponents,
                 // skip the ready/set/go counter faster
-                m_start_music_ticks =
-                    UserConfigParams::m_artist_debug_mode &&
-                    !NetworkConfig::get()->isNetworking()     &&
-                    RaceManager::get()->getNumberOfKarts() -
-                    RaceManager::get()->getNumSpareTireKarts() == 1 &&
-                    RaceManager::get()->getTrackName() != "tutorial" ?
+                m_start_music_ticks = is_artist_quick_start ?
                     stk_config->time2Ticks(0.2f) :
                     stk_config->time2Ticks(1.0f);
             }
@@ -378,14 +368,8 @@ void WorldStatus::updateTime(int ticks)
 
             // In artist debug mode, when without opponents,
             // skip the ready/set/go counter faster
-            if (UserConfigParams::m_artist_debug_mode &&
-                !NetworkConfig::get()->isNetworking() &&
-                RaceManager::get()->getNumberOfKarts() -
-                RaceManager::get()->getNumSpareTireKarts() == 1 &&
-                RaceManager::get()->getTrackName() != "tutorial")
-            {
+            if (is_artist_quick_start)
                 m_auxiliary_ticks += 6;
-            }
 
             return;   // Do not increase time
         case GO_PHASE:
