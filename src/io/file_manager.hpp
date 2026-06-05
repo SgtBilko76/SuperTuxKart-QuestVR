@@ -124,11 +124,9 @@ private:
                                const std::string& fname) const;
     io::path          createAbsoluteFilename(const std::string &f);
     void              checkAndCreateConfigDir();
-    void              checkAndCreateAddonsDir();
-    void              checkAndCreateScreenshotDir();
-    void              checkAndCreateReplayDir();
-    void              checkAndCreateCachedTexturesDir();
-    void              checkAndCreateGPDir();
+    std::string       checkAndCreateGenericSharedDir(std::string shared_folder_name,
+                                                     bool cache_dir = false);
+    void              checkAndCreateAddonsDir(bool capitalize);
     void              discoverPaths();
     void              addAssetsSearchPath();
     void              resetSubdir();

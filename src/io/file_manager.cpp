@@ -209,7 +209,7 @@ FileManager::FileManager()
 #ifdef SUPERTUXKART_DATADIR
         root_dir = SUPERTUXKART_DATADIR"/data/";
 #else
-        root_dir = "/usr/local/share/games/supertuxkart/";
+        root_dir = "/usr/local/share/games/supertuxkart-evolution/";
 #endif
     }
 
@@ -230,7 +230,7 @@ FileManager::FileManager()
 #ifdef MOBILE_STK
     m_stk_assets_download_dir = getenv("HOME");
 #ifdef IOS_STK
-    m_stk_assets_download_dir += "/Library/Application Support/SuperTuxKart/stk-assets/";
+    m_stk_assets_download_dir += "/Library/Application Support/SuperTuxKart-Evolution/stk-assets/";
 #elif defined (ANDROID)
     m_stk_assets_download_dir += "/stk-assets/";
 #else
@@ -261,12 +261,19 @@ FileManager::FileManager()
         addRootDirs(assets_dir);
     }
 
+#if defined(__APPLE__)
+    bool capitalize = true;
+#else
+    bool capitalize = false;
+#endif
+
     checkAndCreateConfigDir();
-    checkAndCreateAddonsDir();
-    checkAndCreateScreenshotDir();
-    checkAndCreateReplayDir();
-    checkAndCreateCachedTexturesDir();
-    checkAndCreateGPDir();
+    checkAndCreateAddonsDir(capitalize);
+    m_screenshot_dir = checkAndCreateGenericSharedDir(capitalize ? "Screenshots" : "screenshots");
+    m_replay_dir = checkAndCreateGenericSharedDir(capitalize ? "Replays" : "replays");
+    m_cached_textures_dir = checkAndCreateGenericSharedDir(
+        capitalize ? "CachedTextures" : "cached-textures", true /* cache dir */);
+    m_gp_dir = checkAndCreateGenericSharedDir(capitalize ? "GrandPrix" : "grandprix");
 
     redirectOutput();
 }   // FileManager
@@ -1023,7 +1030,7 @@ void FileManager::checkAndCreateConfigDir()
         else
             m_user_config_dir = ".";
 
-        m_user_config_dir += "/supertuxkart";
+        m_user_config_dir += "/supertuxkart-evolution";
 
 #elif defined(__APPLE__)
 
@@ -1040,7 +1047,7 @@ void FileManager::checkAndCreateConfigDir()
             m_user_config_dir = "";
         }
         m_user_config_dir += "/Library/Application Support/";
-        const std::string CONFIGDIR("SuperTuxKart");
+        const std::string CONFIGDIR("SuperTuxKart-Evolution");
         m_user_config_dir += CONFIGDIR;
 
 #elif defined(__HAIKU__)
@@ -1055,7 +1062,7 @@ void FileManager::checkAndCreateConfigDir()
             m_user_config_dir = getenv("HOME");
             m_user_config_dir += "/config/settings";
         }
-        m_user_config_dir += "/SuperTuxKart";
+        m_user_config_dir += "/SuperTuxKart-Evolution";
 
 #else
 
@@ -1088,7 +1095,7 @@ void FileManager::checkAndCreateConfigDir()
                 m_user_config_dir = getenv("HOME");
             }
         }
-        m_user_config_dir += "/supertuxkart";
+        m_user_config_dir += "/supertuxkart-evolution";
 
 #endif
 
@@ -1097,7 +1104,7 @@ void FileManager::checkAndCreateConfigDir()
     if(m_user_config_dir.size()>0 && *m_user_config_dir.rbegin()!='/')
         m_user_config_dir += "/";
 
-    m_user_config_dir += "config-2.X-dev/";
+    m_user_config_dir += "config-alpha/";
     if(!checkAndCreateDirectoryP(m_user_config_dir))
     {
         Log::warn("FileManager", "Can not  create config dir '%s', "
@@ -1106,41 +1113,47 @@ void FileManager::checkAndCreateConfigDir()
     }
 
     if (m_stdout_dir.empty())
-    {
         m_stdout_dir = m_user_config_dir;
-    }
 
     return;
 }   // checkAndCreateConfigDir
 
 // ----------------------------------------------------------------------------
-/** Creates the directories for the addons data. This will set m_addons_dir
- *  with the appropriate path, and also create the subdirectories in this
- *  directory.
+/** Creates a subdirectory within the user config path based on the provided folder name
  */
-void FileManager::checkAndCreateAddonsDir()
+std::string FileManager::checkAndCreateGenericSharedDir(std::string shared_folder_name, bool cache_dir)
 {
-#if defined(WIN32)
-    m_addons_dir  = m_user_config_dir+"../addons/";
-#elif defined(__HAIKU__)
-    m_addons_dir  = m_user_config_dir+"addons/";
+    std::string full_path = "";
+#if defined(WIN32) || defined(__HAIKU__)
+    full_path = m_user_config_dir + shared_folder_name + "/";
 #elif defined(__APPLE__)
-    m_addons_dir  = getenv("HOME");
-    m_addons_dir += "/Library/Application Support/SuperTuxKart/Addons/";
-#elif defined(__HAIKU__)
-    m_addons_dir  = m_user_config_dir+"addons/";
+    full_path = getenv("HOME");
+    full_path += "/Library/Application Support/SuperTuxKart-Evolution/" + shared_folder_name + "/";
 #else
-    m_addons_dir = checkAndCreateLinuxDir("XDG_DATA_HOME", "supertuxkart",
-                                          ".local/share", ".stkaddons");
-    m_addons_dir += "addons/";
+    std::string home_type = cache_dir ? "XDG_CACHE_HOME" : "XDG_DATA_HOME";
+    std::string fallback_dir = cache_dir ? ".cache" : ".local/share";
+    full_path = checkAndCreateLinuxDir(home_type.c_str(), "supertuxkart-evolution",
+                                       fallback_dir.c_str(), ".stk-evolution");
+    full_path += shared_folder_name + "/";
 #endif
 
-    if(!checkAndCreateDirectory(m_addons_dir))
+    if(!checkAndCreateDirectory(full_path))
     {
-        Log::error("FileManager", "Can not create add-ons dir '%s', "
-                   "falling back to '.'.", m_addons_dir.c_str());
-        m_addons_dir = "./";
+        Log::error("FileManager", "Can not create '%s' directory '%s', "
+                   "falling back to '.'.", shared_folder_name.c_str(), m_screenshot_dir.c_str());
+        full_path = ".";
     }
+
+    return full_path;
+}   // checkAndCreateGenericSharedDir
+
+// ----------------------------------------------------------------------------
+/** Creates the directories for the addons data. This will set m_addons_dir
+ *  with the appropriate path, and also create the subdirectories in this directory.
+ */
+void FileManager::checkAndCreateAddonsDir(bool capitalize)
+{
+    m_addons_dir = checkAndCreateGenericSharedDir(capitalize ? "Addons" : "addons");
 
     if (!checkAndCreateDirectory(m_addons_dir + "icons/"))
     {
@@ -1152,111 +1165,7 @@ void FileManager::checkAndCreateAddonsDir()
         Log::error("FileManager", "Failed to create add-ons tmp dir at '%s'.",
                    (m_addons_dir + "tmp/").c_str());
     }
-
 }   // checkAndCreateAddonsDir
-
-// ----------------------------------------------------------------------------
-/** Creates the directories for screenshots. This will set m_screenshot_dir
- *  with the appropriate path.
- */
-void FileManager::checkAndCreateScreenshotDir()
-{
-#if defined(WIN32) || defined(__HAIKU__)
-    m_screenshot_dir  = m_user_config_dir+"screenshots/";
-#elif defined(__APPLE__)
-    m_screenshot_dir  = getenv("HOME");
-    m_screenshot_dir += "/Library/Application Support/SuperTuxKart/Screenshots/";
-#else
-    m_screenshot_dir  = checkAndCreateLinuxDir("XDG_DATA_HOME", "supertuxkart",
-                                          ".local/share", ".stkscreenshots");
-    m_screenshot_dir += "screenshots/";
-#endif
-
-    if(!checkAndCreateDirectory(m_screenshot_dir))
-    {
-        Log::error("FileManager", "Can not create screenshot directory '%s', "
-                   "falling back to '.'.", m_screenshot_dir.c_str());
-        m_screenshot_dir = ".";
-    }
-
-}   // checkAndCreateScreenshotDir
-
-// ----------------------------------------------------------------------------
-/** Creates the directories for replay recorded. This will set m_replay_dir
- *  with the appropriate path.
- */
-void FileManager::checkAndCreateReplayDir()
-{
-#if defined(WIN32) || defined(__HAIKU__)
-    m_replay_dir = m_user_config_dir + "replay/";
-#elif defined(__APPLE__)
-    m_replay_dir  = getenv("HOME");
-    m_replay_dir += "/Library/Application Support/SuperTuxKart/replay/";
-#else
-    m_replay_dir = checkAndCreateLinuxDir("XDG_DATA_HOME", "supertuxkart",
-                                          ".local/share", ".supertuxkart");
-    m_replay_dir += "replay/";
-#endif
-
-    if(!checkAndCreateDirectory(m_replay_dir))
-    {
-        Log::error("FileManager", "Can not create replay directory '%s', "
-                   "falling back to '.'.", m_replay_dir.c_str());
-        m_replay_dir = ".";
-    }
-
-}   // checkAndCreateReplayDir
-
-// ----------------------------------------------------------------------------
-/** Creates the directories for cached textures. This will set
-*  m_cached_textures_dir with the appropriate path.
-*/
-void FileManager::checkAndCreateCachedTexturesDir()
-{
-#if defined(WIN32) || defined(__HAIKU__)
-    m_cached_textures_dir = m_user_config_dir + "cached-textures/";
-#elif defined(__APPLE__)
-    m_cached_textures_dir = getenv("HOME");
-    m_cached_textures_dir += "/Library/Application Support/SuperTuxKart/CachedTextures/";
-#else
-    m_cached_textures_dir = checkAndCreateLinuxDir("XDG_CACHE_HOME", "supertuxkart", ".cache/", ".");
-    m_cached_textures_dir += "cached-textures/";
-#endif
-
-    if (!checkAndCreateDirectory(m_cached_textures_dir))
-    {
-        Log::error("FileManager", "Can not create cached textures directory '%s', "
-            "falling back to '.'.", m_cached_textures_dir.c_str());
-        m_cached_textures_dir = ".";
-    }
-
-}   // checkAndCreateCachedTexturesDir
-
-// ----------------------------------------------------------------------------
-/** Creates the directories for user-defined grand prix. This will set m_gp_dir
- *  with the appropriate path.
- */
-void FileManager::checkAndCreateGPDir()
-{
-#if defined(WIN32) || defined(__HAIKU__)
-    m_gp_dir = m_user_config_dir + "grandprix/";
-#elif defined(__APPLE__)
-    m_gp_dir  = getenv("HOME");
-    m_gp_dir += "/Library/Application Support/SuperTuxKart/grandprix/";
-#else
-    m_gp_dir = checkAndCreateLinuxDir("XDG_DATA_HOME", "supertuxkart",
-                                          ".local/share", ".supertuxkart");
-    m_gp_dir += "grandprix/";
-#endif
-
-    if(!checkAndCreateDirectory(m_gp_dir))
-    {
-        Log::error("FileManager", "Can not create user-defined grand prix directory '%s', "
-                   "falling back to '.'.", m_gp_dir.c_str());
-        m_gp_dir = ".";
-    }
-
-}   // checkAndCreateGPDir
 
 // ----------------------------------------------------------------------------
 #if !defined(WIN32) && !defined(__APPLE__)
