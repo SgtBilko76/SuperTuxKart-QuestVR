@@ -1062,7 +1062,7 @@ namespace UserConfigParams
             "Angle between camera and plane of kart (pitch) when the camera is pointing backwards. This is usually larger than the forward-up-angle, since the kart itself otherwise obstricts too much of the view"));
 
     PARAM_PREFIX IntUserConfigParam         m_camera_fov
-            PARAM_DEFAULT(  IntUserConfigParam(80, "fov",
+            PARAM_DEFAULT(  IntUserConfigParam(90, "fov",
             &m_camera_normal,
             "Focal distance (single player)"));
 
