@@ -128,6 +128,11 @@ void AttachableLibraryObject::init(const XMLNode &xml_node, scene::ISceneNode* p
     {
         m_type = "light";
         m_presentation = new TrackObjectPresentationLight(xml_node, parent);
+        // Ensure the template's lights are off
+        // TODO : Ensure the parent node being off properly turn lights off too
+        TrackObjectPresentationLight* light_presentation =
+            dynamic_cast<TrackObjectPresentationLight*>(m_presentation);
+        light_presentation->setEnable(false);
     }
     else
     {
