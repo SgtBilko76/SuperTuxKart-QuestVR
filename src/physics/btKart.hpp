@@ -268,6 +268,11 @@ public:
     /** Returns the time an additional impulse is activated. */
     uint16_t getCentralImpulseTicks() const { return m_ticks_additional_impulse; }
     // ------------------------------------------------------------------------
+    /** Returns the time since the kart last touched the ground with all wheels */
+    uint16_t getLastOnGroundTicks() const { return m_ticks_last_on_ground; }
+    // ------------------------------------------------------------------------
+    void setLastOnGroundTicks(uint16_t ticks) { m_ticks_last_on_ground = ticks; }
+    // ------------------------------------------------------------------------
     bool isImpulseLocked() const { return m_ticks_lock_impulse > 0; }
     // ------------------------------------------------------------------------
     /** Returns the collision (visual) lean. */
