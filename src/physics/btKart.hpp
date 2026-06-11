@@ -107,6 +107,9 @@ private:
     /** Duration over which the additional rotation is applied. */
     uint16_t            m_ticks_additional_rotation;
 
+    /** Duration since the kart was last touching the ground (max 10000 ticks) */
+    uint16_t            m_ticks_last_on_ground; 
+
     /** The rigid body that is the chassis of the kart. */
     btRigidBody        *m_chassisBody;
 
@@ -148,7 +151,7 @@ private:
                                      btTransform chassis_trans,
                                      bool interpolatedTransform=true,
                                      float fraction = 1.0f);
-    void     pushVehicleUpright();
+    void     pushVehicleUpright(btScalar step);
     float    uprightRayCast(const btVector3& raycastStart);
 
 public:
@@ -208,7 +211,10 @@ public:
         updateVehicle(step);
     }   // updateAction
     // ------------------------------------------------------------------------
-    /** Returns the number of wheels of this vehicle. */
+    /** Returns the number of wheels of this vehicle.
+     *  Note that while a lot of SuperTuxKart's code can handle various
+     *  number of wheels, some functionalities will not work as expected
+     *  with numbers different than 4 wheels. */
     inline int getNumWheels() const { return int(m_wheelInfo.size());}
     // ------------------------------------------------------------------------
     /** Returns the chassis (rigid) body. */
