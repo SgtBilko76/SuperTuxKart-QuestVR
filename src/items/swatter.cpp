@@ -47,8 +47,7 @@
 #include <IAnimatedMeshSceneNode.h>
 
 #define SWAT_POS_OFFSET        core::vector3df(0.0, 0.2f, -0.4f)
-#define SWAT_ANGLE_MIN  45
-#define SWAT_ANGLE_MAX  135
+#define SWAT_ANGLE_PER_SECOND 150.0f
 #define SWAT_ANGLE_OFFSET (90.0f + 15.0f)
 #define SWATTER_ANIMATION_SPEED 100.0f
 
@@ -72,6 +71,7 @@ Swatter::Swatter(Kart *kart, int16_t bomb_ticks, int ticks,
     m_bomb_remaining   = bomb_ticks;
     m_scene_node       = NULL;
     m_bomb_scene_node  = NULL;
+    m_current_rotation_angle = 0.0f;
     m_swatter_duration = stk_config->time2Ticks(
         kart->getKartProperties()->getSwatterDuration());
     if (m_bomb_remaining != -1)
@@ -183,7 +183,7 @@ void Swatter::updateGraphics(float dt)
             {
             case SWATTER_AIMING:
                 {
-                    pointToTarget();
+                    pointToTarget(dt);
                     m_played_swatter_animation = false;
                 }
                 break;
@@ -200,7 +200,7 @@ void Swatter::updateGraphics(float dt)
                         m_swat_sound->setPosition(swatter_pos);
                         m_swat_sound->play();
                     }
-                    pointToTarget();
+                    pointToTarget(dt);
                 }
                 break;
             case SWATTER_FROM_TARGET:
@@ -348,25 +348,55 @@ void Swatter::chooseTarget()
 // ----------------------------------------------------------------------------
 /** If there is a current target, point in its direction, otherwise adopt the
  *  default position. */
-void Swatter::pointToTarget()
+void Swatter::pointToTarget(float dt)
 {
 #ifndef SERVER_ONLY
     if (m_kart->isGhostKart() || !m_scene_node)
         return;
 
-    if (!m_closest_kart)
-    {
-        m_scene_node->setRotation(core::vector3df());
-    }
-    else
+    float target_angle = 0.0f;
+
+    if (m_closest_kart)
     {
         Vec3 swatter_to_target =
             m_kart->getTrans().inverse()(m_closest_kart->getXYZ());
         float dy = -swatter_to_target.getZ();
         float dx = swatter_to_target.getX();
-        float angle = SWAT_ANGLE_OFFSET + atan2f(dy, dx) * 180 / M_PI;
-        m_scene_node->setRotation(core::vector3df(0.0, angle, 0.0));
+        target_angle = SWAT_ANGLE_OFFSET + atan2f(dy, dx) * 180 / M_PI;
+        // Move into the 0-360 range for easier handling
+        // Values that need more than one 360° correction shouldn't happen
+        if (target_angle < 0.0f)
+            target_angle += 360.0f;
+        if (target_angle > 360.0f)
+            target_angle -= 360.0f;
     }
+
+    float angle_diff = target_angle - m_current_rotation_angle;
+    // If we have an angle of over 180°, then it's shorter the other way around
+    // We have to take the difference with 360, but also flip the sign
+    if (angle_diff > 180.0f)
+        angle_diff = -360.0f + angle_diff;
+    else if (angle_diff < -180.0f)
+        angle_diff = 360.0f + angle_diff;
+
+    // We can only change the angle so much in the given dt
+    float max_angle_change = dt * SWAT_ANGLE_PER_SECOND;
+
+    // If we are close enough, just snap to the target angle directly
+    if ((angle_diff > 0.0f && angle_diff < max_angle_change) ||
+        (angle_diff < 0.0f && angle_diff > -max_angle_change))
+        m_current_rotation_angle = target_angle;
+    // Otherwise move by the max amount possible
+    else if (angle_diff > 0.0f)
+        m_current_rotation_angle += max_angle_change;
+    else if (angle_diff < 0.0f)
+        m_current_rotation_angle -= max_angle_change;
+
+    // Keep the value in the 0-360 range
+    if (m_current_rotation_angle < 0.0f)
+        m_current_rotation_angle += 360.0f;
+
+    m_scene_node->setRotation(core::vector3df(0.0, m_current_rotation_angle, 0.0));
 #endif
 }   // pointToTarget
 
