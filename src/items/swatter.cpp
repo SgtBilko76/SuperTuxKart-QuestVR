@@ -343,6 +343,10 @@ void Swatter::chooseTarget()
         m_closest_kart = closest_kart;
     else
         m_closest_kart = NULL;
+
+    // If no kart is close enough, there is no target
+    if (min_dist2 > 2500) // 50 * 50
+        m_closest_kart = NULL;
 }
 
 // ----------------------------------------------------------------------------
