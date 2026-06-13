@@ -2314,7 +2314,7 @@ void Kart::setSquashGraphics()
 #ifndef SERVER_ONLY
     if (isGhostKart() || GUIEngine::isNoGraphics()) return;
 
-    m_node->setScale(core::vector3df(1.0f, 0.5f, 1.0f));
+    m_node->setScale(core::vector3df(1.0f, 0.625f, 1.0f));
     if (m_vehicle->getNumWheels() > 0)
     {
         if (!m_wheel_box)
@@ -2329,7 +2329,7 @@ void Kart::setSquashGraphics()
                 wheels[i]->setParent(m_wheel_box);
         }
         m_wheel_box->getRelativeTransformationMatrix()
-            .setScale(core::vector3df(1.0f, 2.0f, 1.0f));
+            .setScale(core::vector3df(1.0f, 1.6f, 1.0f));
     }
 #endif
 }   // setSquashGraphics
@@ -3862,7 +3862,7 @@ void Kart::updateGraphics(float dt)
      */
 #ifndef SERVER_ONLY
     if (m_node && isSquashed() &&
-        m_node->getScale() != core::vector3df(1.0f, 0.5f, 1.0f))
+        m_node->getScale() != core::vector3df(1.0f, 0.625f, 1.0f))
         setSquashGraphics();
     else if (m_node && !isSquashed() &&
         m_node->getScale() != core::vector3df(1.0f, 1.0f, 1.0f))
