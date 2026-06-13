@@ -279,11 +279,10 @@ bool Swatter::updateAndTestFinished()
                     squashThingsAround();
                     m_animation_phase = SWATTER_FROM_TARGET;
                     const int end_ticks = ticks_start + stk_config->time2Ticks(0.5f);
-                    if (RaceManager::get()->isBattleMode() ||
-                        RaceManager::get()->isSoccerMode())
+                    // In Battle mode, the swatter gives a point / takes a life / resets
+                    // another kart, so we remove it after one successful hit
+                    if (RaceManager::get()->isBattleMode())
                     {
-                        // Remove swatter from kart in arena gameplay
-                        // after one successful hit
                         m_discard_now = true;
                         m_discard_ticks = end_ticks;
                     }
