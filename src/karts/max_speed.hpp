@@ -222,6 +222,8 @@ public:
     // ------------------------------------------------------------------------
     /** Returns the current maximum speed for this kart. */
     float getCurrentMaxSpeed() const { return m_current_max_speed; }
+    // ------------------------------------------------------------------------
+    float computeReverseMaxSpeed() const;
     // --------------------------------------------------------------------
     unsigned int getLatestSkidLevel() const { return m_last_triggered_skid_level; }
     // ------------------------------------------------------------------------

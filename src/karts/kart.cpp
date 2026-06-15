@@ -3388,6 +3388,7 @@ void Kart::updateEnginePowerAndBrakes(int ticks)
             // Setting 
             m_vehicle->setAllBrakes(brake_factor);
         } // m_speed > 0
+
         // If not going forward and acceleration is pressed, ignore the brake input
         // If acceleration is not set, interpret the brake input as a request
         // for backward acceleration using the reverse gear
@@ -3395,33 +3396,12 @@ void Kart::updateEnginePowerAndBrakes(int ticks)
         {
             m_vehicle->setAllBrakes(0);
 
-            // To determine what is the allowable max speed in reverse,
-            // we do some additional math to avoid ultra-slow-reverse (see #5021).
-            // This dampens the effect of max-speed penalties.
-            float max_speed_ratio = m_max_speed->getCurrentMaxSpeed()
-                                    / m_kart_properties->getEngineMaxSpeed();
-            float reverse_speed_ratio = m_kart_properties->getEngineMaxSpeedReverseRatio();
-            if (max_speed_ratio < 1.0f && reverse_speed_ratio < 1.0f)
-            {
-                // We want to ensure that reverse speed at a given slowdown level cannot
-                // exceed the forward max speed (limit A) and that it cannot exceed reverse speed
-                // at lower slowdown levels (limit B).
-                // We use two formulas. One guarantees the respect of limit A, and of limit B
-                // for values >= 0.5f ; the other formula guarantees the respect of limit B, and
-                // of limit A for values <= 0.5f. Both formulas transition smoothly at 0.5f.
-                float soft_ratio = reverse_speed_ratio * max_speed_ratio + (1.0f - max_speed_ratio);
-                float hard_ratio = reverse_speed_ratio * (2.0f - max_speed_ratio);
-                reverse_speed_ratio = std::min(soft_ratio, hard_ratio);
-            }
-
-            // When going backward, we apply the reverse gear, unless exceeding the max reverse speed
             // The reverse gear ratio is already applied to engine power in getActualWheelForce(),
-            // so we just make it negative so that it makes the kart go backwards.
-            if ( -m_speed < m_max_speed->getCurrentMaxSpeed() * reverse_speed_ratio)
-                engine_power = -base_engine_power;
-            else  // -m_speed >= max speed on this terrain
-                engine_power = 0;
-        }   // m_speed <00
+            // so we just make engine power negative so that it makes the kart go backwards.
+            engine_power = -base_engine_power;
+
+            m_vehicle->setMaxSpeed(m_max_speed->computeReverseMaxSpeed());
+        }   // m_speed < 0 && !m_controls.getAccel()
     } // if getBrake
     else
     {
