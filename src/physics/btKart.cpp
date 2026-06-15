@@ -1196,9 +1196,8 @@ void btKart::adjustSpeed(btScalar min_speed, btScalar max_speed)
     // of movement doesn't matter and negative speeds are impossible.
     float speed = velocity.length();
 
-    if (max_speed < min_speed)
-        min_speed = max_speed;
-
+    // Min speed takes precedence over max speed (this ensures that things
+    // work properly e.g. when a min speed is needed to jump over a gap)
     if (speed < min_speed)
     {
         // The speedup is only for the direction of the normal.

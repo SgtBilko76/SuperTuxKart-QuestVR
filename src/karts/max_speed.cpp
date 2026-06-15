@@ -67,7 +67,6 @@ MaxSpeed::MaxSpeed(Kart *kart)
 void MaxSpeed::reset(bool leave_squash)
 {
     m_current_max_speed = m_kart->getKartProperties()->getEngineMaxSpeed();
-    m_min_speed         = -1.0f;
     m_last_triggered_skid_level = 0;
 
     for(unsigned int i=MS_DECREASE_MIN; i<MS_DECREASE_MAX; i++)
@@ -184,15 +183,6 @@ void MaxSpeed::instantSpeedIncrease(unsigned int category,
     // This will result in all max speed settings updated, but no
     // changes to any slow downs since dt=0
     update(0);
-    float speed = std::min(m_kart->getSpeed() + speed_boost,
-                           getCurrentMaxSpeed() );
-
-    // If there is a min_speed defined, make sure that the kart is still
-    // fast enough (otherwise e.g. on easy difficulty even with zipper
-    // the speed might be too low for certain jumps).
-    if(speed < m_min_speed) speed = m_min_speed;
-
-    m_kart->getVehicle()->setMinSpeed(speed);
 }   // instantSpeedIncrease
 
 // ----------------------------------------------------------------------------
@@ -490,17 +480,6 @@ void MaxSpeed::update(int ticks)
 
     // Then cap the current speed of the kart
     // --------------------------------------
-    if(m_min_speed > 0 && m_kart->getSpeed() < m_min_speed)
-    {
-        m_kart->getVehicle()->setMinSpeed(m_min_speed);
-    }
-    // FIXME: setMinSpeed only updates the value if the new value is greater,
-    // so the following code doesn't really do anything?
-    // There is probably a reason for the behavior of setMinSpeed, but the code
-    // should be redesigned to make it less confusing...
-    else
-        m_kart->getVehicle()->setMinSpeed(0);   // no additional acceleration
-
     if (m_kart->isOnGround())
         m_kart->getVehicle()->setMaxSpeed(m_current_max_speed);
     else

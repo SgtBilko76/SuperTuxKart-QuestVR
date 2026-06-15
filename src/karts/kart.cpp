@@ -3190,11 +3190,12 @@ void Kart::updatePhysics(int ticks)
 
     updateSliding();
 
-    // Cap speed if necessary
+    // Constrain speed if necessary
+    // Zipper pads can define a minimum speed,
+    // for example to to guarantee a gap can be jumped over
     const Material *m = getMaterial();
-
     if (m && m->isZipper())
-        m_max_speed->setMinSpeed(m->getZipperMinSpeed());
+        m_vehicle->setMinSpeed(m->getZipperMinSpeed());
     m_max_speed->update(ticks);
 
 #ifdef XX
