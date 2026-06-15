@@ -1186,35 +1186,37 @@ float btKart::getAirFriction(float speed)
 /** Adjusts the velocity of this kart to be at least the specified minimum,
  *  and less than or equal to the maximum. If necessary the kart will
  *  instantaneously change its speed.
- *  \param min_speed Minimum speed, 0 means no effect.
+ *  \param min_speed Minimum speed the kart is allowed to have, 0 means no effect
  *  \param max_speed Maximum speed the kart is allowed to have.
  */
 void btKart::adjustSpeed(btScalar min_speed, btScalar max_speed)
 {
     const btVector3 &velocity = m_chassisBody->getLinearVelocity();
+    // Note that speed as considered here is directionless, i.e. the direction
+    // of movement doesn't matter and negative speeds are impossible.
     float speed = velocity.length();
 
+    if (max_speed < min_speed)
+        min_speed = max_speed;
 
-    if (speed < min_speed && min_speed > 0)
+    if (speed < min_speed)
     {
-        if (speed > 0)
+        // The speedup is only for the direction of the normal.
+        const btVector3 &normal = m_kart->getNormal();
+        btVector3 upright_component = normal * normal.dot(velocity);
+        // Subtract the upright velocity component,
+        btVector3 v = velocity - upright_component;
+        if (!v.fuzzyZero())
         {
-            // The speedup is only for the direction of the normal.
-            const btVector3 &normal = m_kart->getNormal();
-            btVector3 upright_component = normal * normal.dot(velocity);
-            // Subtract the upright velocity component,
-            btVector3 v = velocity - upright_component;
-            if (!v.fuzzyZero())
-            {
-                const float velocity_ratio = min_speed / v.length();
-                // Scale the velocity in the plane, then add the upright component
-                // of the velocity back in.
-                m_chassisBody->setLinearVelocity( v*velocity_ratio
-                                                + upright_component );
-            }
+            const float velocity_ratio = min_speed / v.length();
+            // Scale the velocity in the plane, then add the upright component
+            // of the velocity back in.
+            m_chassisBody->setLinearVelocity( v*velocity_ratio
+                                            + upright_component );
         }
     }
-    else if (speed >0 && max_speed >= 0 && speed > max_speed)
+    // This is used to enforce max speed in both forward and reverse
+    else if (max_speed >= 0.0f && speed > max_speed)
     {
         const float velocity_ratio = max_speed / speed;
         m_chassisBody->setLinearVelocity(velocity * velocity_ratio);

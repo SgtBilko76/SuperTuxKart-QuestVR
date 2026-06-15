@@ -1032,8 +1032,10 @@ void Kart::adjustSpeed(float f)
     m_body->setLinearVelocity(m_body->getLinearVelocity()*f);
     m_body->setAngularVelocity(m_body->getAngularVelocity()*f);
     // Avoid instant speed increase on the same frame ignoring the adjustment, see #5411
-    float new_min_speed = m_vehicle->getMinSpeed()*f;
-    m_vehicle->resetMinSpeed(); // setMinSpeed only update if the new one is greater... See btKart.hpp
+    // The instant speed increase sets a speed floor we need to reset and replace
+    // See btKart.hpp for why setMinSpeed alone is insufficient.
+    float new_min_speed = m_vehicle->getMinSpeed() * f;
+    m_vehicle->resetMinSpeed();
     m_vehicle->setMinSpeed(new_min_speed);
 }   // adjustSpeed
 
@@ -3191,8 +3193,8 @@ void Kart::updatePhysics(int ticks)
     // Cap speed if necessary
     const Material *m = getMaterial();
 
-    float min_speed =  m && m->isZipper() ? m->getZipperMinSpeed() : -1.0f;
-    m_max_speed->setMinSpeed(min_speed);
+    if (m && m->isZipper())
+        m_max_speed->setMinSpeed(m->getZipperMinSpeed());
     m_max_speed->update(ticks);
 
 #ifdef XX
