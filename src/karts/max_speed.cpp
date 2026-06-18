@@ -180,9 +180,11 @@ void MaxSpeed::instantSpeedIncrease(unsigned int category,
 {
     increaseMaxSpeed(category, add_max_speed, engine_force, duration,
                      fade_out_time);
-    // This will result in all max speed settings updated, but no
-    // changes to any slow downs since dt=0
+    // This will result in all max speed settings updated, but no changes
+    // to any slow downs since dt=0, allowing a correct use of getCurrentMaxSpeed
     update(0);
+    float new_speed = std::min(m_kart->getSpeed() + speed_boost, getCurrentMaxSpeed());
+    m_kart->getVehicle()->setMinSpeed(new_speed);
 }   // instantSpeedIncrease
 
 // ----------------------------------------------------------------------------
