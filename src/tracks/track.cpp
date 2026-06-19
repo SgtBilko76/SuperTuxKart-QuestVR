@@ -1923,13 +1923,9 @@ void Track::loadTrackModel(bool reverse_track, unsigned int mode_id)
             const XMLNode *node = root->getNode(i);
             const std::string &name = node->getName();
             if (name == "red-flag")
-            {
                 m_red_flag.setOrigin(flagCommand(node));
-            }
             else if (name == "blue-flag")
-            {
                 m_blue_flag.setOrigin(flagCommand(node));
-            }
         }   // for i<root->getNumNodes()
     }
     main_loop->renderGUI(3320);
@@ -2446,10 +2442,6 @@ void Track::loadObjects(const XMLNode* root, const std::string& path,
         else if (name == "lightshaft")
         {
             // handled above
-        }
-        else if (name == "instancing")
-        {
-            // TODO: eventually remove, this is now automatic
         }
         else if (name == "subtitles")
         {

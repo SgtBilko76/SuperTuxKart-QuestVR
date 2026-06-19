@@ -182,9 +182,9 @@ void ItemState::collected(const Kart *kart)
     }
 
     if (RaceManager::get()->isBattleMode())
-    {
-        m_ticks_till_return *= 3;
-    }
+        m_ticks_till_return *= 4;
+    else if (RaceManager::get()->isSoccerMode())
+        m_ticks_till_return *= 2;
 }   // collected
 
 // ----------------------------------------------------------------------------
