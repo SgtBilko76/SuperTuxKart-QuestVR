@@ -70,7 +70,6 @@
 #include "physics/triangle_mesh.hpp"
 #include "scriptengine/script_engine.hpp"
 #include "tracks/arena_graph.hpp"
-#include "tracks/bezier_curve.hpp"
 #include "tracks/check_manager.hpp"
 #include "tracks/check_structure.hpp"
 #include "tracks/drive_graph.hpp"
@@ -628,9 +627,6 @@ void Track::loadTrackInfo()
     }
 
     if(m_groups.size()==0) m_groups.push_back(FavoriteStatus::DEFAULT_FAVORITE_GROUP_NAME);
-    const XMLNode *xml_node = root->getNode("curves");
-
-    if(xml_node) loadCurves(*xml_node);
 
     // Set the correct paths
     if (m_screenshot.length() > 0)
@@ -656,31 +652,19 @@ void Track::loadTrackInfo()
         delete easter;
     }
 
-    if(file_manager->fileExists(m_root+"navmesh.xml") && !m_dont_load_navmesh)
+    if (file_manager->fileExists(m_root+"navmesh.xml") && !m_dont_load_navmesh)
+    {
         m_has_navmesh = true;
+    }
     else if ( (m_is_arena || m_is_soccer) && !m_dont_load_navmesh)
     {
         Log::warn("Track", "NavMesh is not found for arena %s, "
                   "disable AI for it.", m_name.c_str());
     }
+    // FIXME - Fetch the limit from config
     if (m_is_soccer)
-    {
-        // Currently only max eight players in soccer mode
         m_max_arena_players = 8;
-    }
 }   // loadTrackInfo
-
-//-----------------------------------------------------------------------------
-/** Loads all curves from the XML node.
- */
-void Track::loadCurves(const XMLNode &node)
-{
-    for(unsigned int i=0; i<node.getNumNodes(); i++)
-    {
-        const XMLNode *curve = node.getNode(i);
-        m_all_curves.push_back(new BezierCurve(*curve));
-    }   // for i<node.getNumNodes
-}   // loadCurves
 
 //-----------------------------------------------------------------------------
 /** Loads all music information for the specified files (which is taken from
@@ -2712,8 +2696,7 @@ void Track::itemCommand(const XMLNode *node)
     node->get("drop", &drop);
 
     // Some modes (e.g. time trial) don't have any bonus boxes
-    if(type==Item::ITEM_BONUS_BOX &&
-       !World::getWorld()->haveBonusBoxes())
+    if(type==Item::ITEM_BONUS_BOX && !World::getWorld()->haveBonusBoxes())
         return;
 
     // Only do easter eggs in easter egg mode.

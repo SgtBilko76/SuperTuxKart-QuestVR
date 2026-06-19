@@ -400,9 +400,6 @@ private:
     core::vector3df m_color_inlevel;
     core::vector2df m_color_outlevel;
 
-    /** List of all bezier curves in the track - for e.g. camera, ... */
-    std::vector<BezierCurve*> m_all_curves;
-
     std::vector<std::pair<TrackObject*, TrackObject*> > m_meta_library;
 
     /** The number of laps the track will be raced in a random GP.
@@ -425,7 +422,6 @@ private:
     void createWater(const XMLNode &node);
     void getMusicInformation(std::vector<std::string>&  filenames,
                              std::vector<MusicInformation*>& m_music   );
-    void loadCurves(const XMLNode &node);
     void handleSky(const XMLNode &root, const std::string &filename);
     void freeCachedMeshVertexBuffer();
     void copyFromMainProcess();

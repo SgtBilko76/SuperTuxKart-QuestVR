@@ -347,9 +347,7 @@ void TrackObjectPresentationLibraryNode::move(const core::vector3df& xyz, const 
     for (TrackObject* obj : m_parent->getChildren())
     {
         if (obj->getPhysicalObject() != NULL)
-        {
             obj->movePhysicalBodyToGraphicalNode(obj->getAbsolutePosition(), obj->getRotation());
-        }
     }
 }
 // ----------------------------------------------------------------------------
@@ -425,9 +423,7 @@ TrackObjectPresentationMesh::TrackObjectPresentationMesh(
     xml_node.get("skeletal-animation", &skeletal_animation);
 
     if (render_pass == "skybox")
-    {
         m_is_in_skybox = true;
-    }
 
     bool animated = skeletal_animation;
     bool displacing = false;
@@ -521,22 +517,15 @@ void TrackObjectPresentationMesh::init(const XMLNode* xml_node, scene::ISceneNod
     {
         std::string type;
         xml_node->get("type", &type);
-        if (type == "animation" || xml_node->hasChildNamed("curve"))
+
+        m_node = irr_driver->addMesh(m_mesh, m_model_file /* debug name */,
+            parent, m_render_info);
+        enabled = false;
+        m_force_always_hidden = true;
+
+        // Static object
+        if (type != "animation" && !xml_node->hasChildNamed("curve"))
         {
-            // Animated
-            //m_node = irr_driver->getSceneManager()->addEmptySceneNode();
-            m_node = irr_driver->addMesh(m_mesh, m_model_file /* debug name */,
-                parent, m_render_info);
-            enabled = false;
-            m_force_always_hidden = true;
-        }
-        else
-        {
-            // Static
-            m_node = irr_driver->addMesh(m_mesh, m_model_file /* debug name */,
-                parent, m_render_info);
-            enabled = false;
-            m_force_always_hidden = true;
             Track *track = Track::getCurrentTrack();
             if (track && xml_node)
                 track->addPhysicsOnlyNode(m_node);
@@ -773,9 +762,7 @@ void TrackObjectPresentationSound::stopSound()
 TrackObjectPresentationSound::~TrackObjectPresentationSound()
 {
     if (m_sound)
-    {
         m_sound->deleteSFX();
-    }
 }   // ~TrackObjectPresentationSound
 
 // ----------------------------------------------------------------------------
