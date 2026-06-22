@@ -289,8 +289,10 @@ void KartSelectionScreen::init()
     tabs->select(UserConfigParams::m_last_used_kart_group,
                  PLAYER_ID_GAME_MASTER);
 
+#ifdef DEBUG
     Widget* placeholder = getWidget("playerskarts");
     assert(placeholder != NULL);
+#endif
 
     m_game_master_confirmed = false;
 
@@ -888,12 +890,8 @@ void KartSelectionScreen::updateKartWidgetModel(int widget_id,
         {
             const KartModel &kart_model = kp->getMasterKartModel();
 
-            float scale = 35.0f;
-            if (kart_model.getLength() > 1.45f)
-            {
-                // if kart is too long, size it down a bit so that it fits
-                scale = 30.0f;
-            }
+            // scaling the view basing in the kart length
+            float scale = 50.0f / kart_model.getLength();
 
             core::matrix4 model_location;
             model_location.setScale(core::vector3df(scale, scale, scale));
