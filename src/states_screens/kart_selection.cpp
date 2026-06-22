@@ -890,8 +890,7 @@ void KartSelectionScreen::updateKartWidgetModel(int widget_id,
         {
             const KartModel &kart_model = kp->getMasterKartModel();
 
-            // scaling the view basing in the kart length
-            float scale = 50.0f / kart_model.getLength();
+            float scale = w3->computeScale(kart_model.getLength(), kart_model.getHeight());
 
             core::matrix4 model_location;
             model_location.setScale(core::vector3df(scale, scale, scale));

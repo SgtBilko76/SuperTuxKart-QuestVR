@@ -104,9 +104,7 @@ void KartColorSliderDialog::beforeAddingWidgets()
 
     core::matrix4 model_location;
 
-    // scaling the view basing in the kart length
-    float scale = 50.0f / kart_model.getLength();
-
+    float scale = m_model_view->computeScale(kart_model.getLength(), kart_model.getHeight());
     model_location.setScale(core::vector3df(scale, scale, scale));
 
     // Add the kart model (including wheels and speed weight objects)

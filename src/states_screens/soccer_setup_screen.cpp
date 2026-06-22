@@ -167,8 +167,7 @@ void SoccerSetupScreen::beforeAddingWidget()
                 (info.team == KART_TEAM_BLUE ? 0.66f : 1.0f);
         }
 
-        // scaling the view basing in the kart length
-        float scale = 50.0f / kart_model.getLength();
+        float scale = kart_view->computeScale(kart_model.getLength(), kart_model.getHeight());
 
         core::matrix4 model_location;
         model_location.setScale(core::vector3df(scale, scale, scale));
