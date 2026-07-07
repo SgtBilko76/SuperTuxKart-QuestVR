@@ -1299,19 +1299,16 @@ bool Track::loadMainTrack(const XMLNode &root)
                    "Main track model '%s' in '%s' not found, aborting.",
                    track_node->getName().c_str(), model_name.c_str());
     }
+
+    scene::ISceneNode* scene_node = NULL;
+    scene::IMesh* tangent_mesh = NULL;
+#ifndef SERVER_ONLY
     scene::IAnimatedMesh* an_mesh = dynamic_cast<scene::IAnimatedMesh*>(mesh);
     bool ge_spm = false;
     if (an_mesh && an_mesh->getMeshType() == scene::EAMT_SPM)
         ge_spm = true;
-
-    scene::ISceneNode* scene_node = NULL;
-    scene::IMesh* tangent_mesh = NULL;
-#ifdef SERVER_ONLY
-    if (false)
-#else
     if (m_version < 7 && !CVS->isGLSL() && !GUIEngine::isNoGraphics() &&
         !ge_spm)
-#endif
     {
         // The mesh as returned does not have all mesh buffers with the same
         // texture combined. This can result in a _HUGE_ overhead. E.g. instead
@@ -1330,6 +1327,7 @@ bool Track::loadMainTrack(const XMLNode &root)
         irr_driver->removeMeshFromCache(mesh);
     }
     else
+#endif
     {
         // SPM does the combine for you
         tangent_mesh = mesh;
