@@ -16,6 +16,8 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+#ifndef SERVER_ONLY // No GFX file in server builds
+
 #include "karts/kart_gfx.hpp"
 
 #include "config/user_config.hpp"
@@ -55,7 +57,6 @@ KartGFX::KartGFX(const Kart *kart, bool is_day)
 
     // Create nitro light
     core::vector3df location(0.0f, 0.5f, -0.5f*length - 0.05f);
-#ifndef SERVER_ONLY
     scene::ISceneNode *node = m_kart->getNode();
     if (!GUIEngine::isNoGraphics() && supportsLight())
     {
@@ -109,7 +110,6 @@ KartGFX::KartGFX(const Kart *kart, bool is_day)
         m_skidding_light_2->grab();
         m_skidding_light_3->grab();
     }
-#endif
 
     // Create particle effects
     Vec3 rear_left(kart->getWheelGraphicsPosition(3).getX(), 0.05f,
@@ -154,10 +154,8 @@ KartGFX::KartGFX(const Kart *kart, bool is_day)
     }
     else
     {
-#ifndef SERVER_ONLY
         m_all_emitters.push_back(NULL);
         m_all_emitters.push_back(NULL);
-#endif
     }
 
 }   // KartGFX
@@ -167,7 +165,6 @@ KartGFX::KartGFX(const Kart *kart, bool is_day)
  */
 KartGFX::~KartGFX()
 {
-#ifndef SERVER_ONLY
     for(unsigned int i=0; i<KGFX_COUNT; i++)
     {
         if(m_all_emitters[i])
@@ -182,8 +179,6 @@ KartGFX::~KartGFX()
         m_skidding_light_2->drop();
         m_skidding_light_3->drop();
     }
-#endif
-
 }   // ~KartGFX
 
 // ----------------------------------------------------------------------------
@@ -196,7 +191,6 @@ KartGFX::~KartGFX()
 void KartGFX::addEffect(KartGFXType type, const std::string &file_name,
                         const Vec3 &position, bool important)
 {
-#ifndef SERVER_ONLY
     if ((UserConfigParams::m_particles_effects < 2 &&
         (!important || m_kart->getType() == RaceManager::KT_AI ||
         m_kart->getType() == RaceManager::KT_SPARE_TIRE)) ||
@@ -254,9 +248,6 @@ void KartGFX::addEffect(KartGFXType type, const std::string &file_name,
         m_skid_kind2 = kind;
     else if (type==KGFX_SKID3L || type==KGFX_SKID3R)
         m_skid_kind3 = kind;
-#else
-    m_all_emitters.push_back(NULL);
-#endif
 }   // addEffect
 
 // ----------------------------------------------------------------------------
@@ -265,7 +256,6 @@ void KartGFX::addEffect(KartGFXType type, const std::string &file_name,
 void KartGFX::reset()
 {
     m_wheel_toggle = 1;
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -276,7 +266,6 @@ void KartGFX::reset()
             m_all_emitters[i]->setCreationRateAbsolute(0);
         }
     }
-#endif
 }   // reset
 
 // ----------------------------------------------------------------------------
@@ -292,8 +281,6 @@ void KartGFX::setSkidLevel(const unsigned int level, const unsigned int upcoming
     assert(level <= 3);
     m_skid_level = level;
 
-//    const ParticleKind *pk = level==1 ? m_skid_kind1 : m_skid_kind2;
-#ifndef SERVER_ONLY
     const ParticleKind *pk, *pk2;
     if (level == 0)
         pk = m_skid_kind0;
@@ -331,7 +318,6 @@ void KartGFX::setSkidLevel(const unsigned int level, const unsigned int upcoming
     setCreationRateRelative(KartGFX::KGFX_SKIDR, 1.0f);
     setCreationRateRelative(KartGFX::KGFX_SKIDL2, 0.0f);
     setCreationRateRelative(KartGFX::KGFX_SKIDR2, 0.0f);
-#endif
 }   // setSkidLevel
 
 // ----------------------------------------------------------------------------
@@ -342,7 +328,6 @@ void KartGFX::setSkidLevel(const unsigned int level, const unsigned int upcoming
  */
 void KartGFX::setParticleKind(const KartGFXType type, const ParticleKind *pk)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -350,7 +335,6 @@ void KartGFX::setParticleKind(const KartGFXType type, const ParticleKind *pk)
     if(!pe) return;
 
     pe->setParticleType(pk);
-#endif
 }   // setParticleKind
 
 // ----------------------------------------------------------------------------
@@ -360,14 +344,12 @@ void KartGFX::setParticleKind(const KartGFXType type, const ParticleKind *pk)
  */
 void KartGFX::setXYZ(const KartGFXType type, const Vec3 &xyz)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
     ParticleEmitter *pe = m_all_emitters[KGFX_TERRAIN];
     if(!pe) return;
     pe->setPosition(xyz);
-#endif
 }   // setXYZ
 
 // ----------------------------------------------------------------------------
@@ -378,7 +360,6 @@ void KartGFX::setXYZ(const KartGFXType type, const Vec3 &xyz)
  */
 void KartGFX::setCreationRateAbsolute(KartGFXType type, float f)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -389,7 +370,6 @@ void KartGFX::setCreationRateAbsolute(KartGFXType type, float f)
         return;
 
     m_all_emitters[type]->setCreationRateAbsolute(f);
-#endif
 }   // setCreationRateAbsolute
 
 // ----------------------------------------------------------------------------
@@ -402,7 +382,6 @@ void KartGFX::setCreationRateAbsolute(KartGFXType type, float f)
  */
 void KartGFX::setCreationRateRelative(KartGFXType type, float f)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -413,7 +392,6 @@ void KartGFX::setCreationRateRelative(KartGFXType type, float f)
         else
             m_all_emitters[type]->setCreationRateRelative(f);
     }
-#endif
 }   // setCreationRateRelative
 
 // ----------------------------------------------------------------------------
@@ -426,13 +404,11 @@ void KartGFX::setCreationRateRelative(KartGFXType type, float f)
  */
 void KartGFX::resizeBox(KartGFXType type, float new_size)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
     if(m_all_emitters[type])
         m_all_emitters[type]->resizeBox(std::max(0.25f, new_size));
-#endif
 }   // resizeBox
 
 // ----------------------------------------------------------------------------
@@ -444,7 +420,6 @@ void KartGFX::resizeBox(KartGFXType type, float new_size)
  */
 void KartGFX::updateTerrain(const ParticleKind *pk)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -480,7 +455,6 @@ void KartGFX::updateTerrain(const ParticleKind *pk)
     // m_skidding can be > 2, and speed > maxSpeed (if powerups are used).
     if(rate>1.0f) rate = 1.0f;
     pe->setCreationRateRelative(rate);
-#endif
 }   // updateTerrain
 
 // ----------------------------------------------------------------------------
@@ -491,13 +465,11 @@ void KartGFX::update(float dt)
 {
     m_wheel_toggle = 1 - m_wheel_toggle;
 
-#ifndef SERVER_ONLY
     for (unsigned int i = 0; i < m_all_emitters.size(); i++)
     {
         if (m_all_emitters[i])
             m_all_emitters[i]->update(dt);
     }
-#endif
 
 }  // update
 
@@ -507,7 +479,6 @@ void KartGFX::update(float dt)
  */
 void KartGFX::updateNitroGraphics(float nitro_frac, bool isNitroHackOn, bool activeNitro)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -553,7 +524,6 @@ void KartGFX::updateNitroGraphics(float nitro_frac, bool isNitroHackOn, bool act
     // Exhaust is always emitting
     setCreationRateRelative(KartGFX::KGFX_EXHAUST1, 1.0);
     setCreationRateRelative(KartGFX::KGFX_EXHAUST2, 1.0);
-#endif
 }  // updateNitroGraphics
 
 // ----------------------------------------------------------------------------
@@ -563,21 +533,18 @@ void KartGFX::updateNitroGraphics(float nitro_frac, bool isNitroHackOn, bool act
  */
 void KartGFX::updateSkidLight(unsigned int level)
 {
-#ifndef SERVER_ONLY
     if (!GUIEngine::isNoGraphics() && supportsLight())
     {
         m_skidding_light_1->setVisible(level == 1);
         m_skidding_light_2->setVisible(level == 2);
         m_skidding_light_3->setVisible(level > 2);
     }
-#endif
 }   // updateSkidLight
 
 // ----------------------------------------------------------------------------
 void KartGFX::getGFXStatus(int* nitro, bool* zipper,
                            int* skidding, bool* red_skidding, bool* purple_skidding) const
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -609,14 +576,12 @@ void KartGFX::getGFXStatus(int* nitro, bool* zipper,
     *skidding = s;
     *red_skidding = r;
     *purple_skidding = p;
-#endif
 }   // getGFXStatus
 
 // ----------------------------------------------------------------------------
 void KartGFX::setGFXFromReplay(int nitro, bool zipper,
                                int skidding, bool red_skidding, bool purple_skidding)
 {
-#ifndef SERVER_ONLY
     if (GUIEngine::isNoGraphics())
         return;
 
@@ -677,13 +642,11 @@ void KartGFX::setGFXFromReplay(int nitro, bool zipper,
             m_skidding_light_3->setVisible(false);
         }
     }
-#endif
 }   // setGFXFromReplay
 
 // ----------------------------------------------------------------------------
 void KartGFX::setGFXInvisible()
 {
-#ifndef SERVER_ONLY
     if (!GUIEngine::isNoGraphics() && supportsLight())
     {
         m_nitro_light->setVisible(false);
@@ -693,16 +656,13 @@ void KartGFX::setGFXInvisible()
         m_skidding_light_3->setVisible(false);
         m_kart->getKartModel()->toggleHeadlights(false);
     }
-#endif
 }   // setGFXInvisible
 
 // ----------------------------------------------------------------------------
 bool KartGFX::supportsLight() const
 {
-#ifdef SERVER_ONLY
-    return false;
-#else
     return CVS->isGLSL() ||
         irr_driver->getVideoDriver()->getDriverType() == video::EDT_VULKAN;
-#endif
 }
+
+#endif // ifndef SERVER_ONLY
