@@ -1462,7 +1462,7 @@ bool onEvent(const SEvent &event)
 void handleStaticAction(int key, int value, bool control_pressed, bool shift_pressed)
 {
     World* world = World::getWorld();
-    CameraFPS *cam = dynamic_cast<CameraFPS*>(Camera::getActiveCamera());
+    assert (world != nullptr);
 
     if (value)
     {
@@ -1471,178 +1471,112 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
             case IRR_KEY_OEM_3:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_ADJUST_LIGHTS);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_VISUAL_VALUES);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_HELP);
-                }
                 break;
             }
             // Function key actions
             case IRR_KEY_F1:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_NORMAL);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_ATTACHMENT_BOMB);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_ELECTRO);
-                }
                 break;
             }
             case IRR_KEY_F2:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_FREE);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_ATTACHMENT_ANCHOR);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_RUBBERBALL);
-                }
                 break;
             }
             case IRR_KEY_F3:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_TOP);
-                }
                 else if (shift_pressed)
-                {
                    handleContextMenuAction(DEBUG_ATTACHMENT_PARACHUTE);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_BOWLING);
-                }
                 break;
             }
             case IRR_KEY_F4:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_WHEEL);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_ATTACHMENT_SQUASH);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_BUBBLEGUM);
-                }
                 break;
             }
             case IRR_KEY_F5:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_BEHIND_KART);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_ATTACHMENT_PLUNGER);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_CAKE);
-                }
                 break;
             }
             case IRR_KEY_F6:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_SIDE_OF_KART);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_ATTACHMENT_EXPLOSION);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_PARACHUTE);
-                }
                 break;
             }
             case IRR_KEY_F7:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_INV_SIDE_OF_KART);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_SCRIPT_CONSOLE);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_PLUNGER);
-                }
                 break;
             }
             case IRR_KEY_F8:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_CAM_FRONT_OF_KART);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_TEXTURE_CONSOLE);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_SWATTER);
-                }
                 break;
             }
             case IRR_KEY_F9:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_VIEW_KART_SLIDER);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_RUN_CUTSCENE);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_SWITCH);
-                }
                 break;
             }
             case IRR_KEY_F10:
             {
                 if (control_pressed)
-                {
                     handleContextMenuAction(DEBUG_POWERUP_SLIDER);
-                }
                 else if (shift_pressed)
-                {
                     handleContextMenuAction(DEBUG_GUI_TOGGLE);
-                }
                 else
-                {
                     handleContextMenuAction(DEBUG_POWERUP_ZIPPER);
-                }
                 break;
             }
             case IRR_KEY_INSERT:
@@ -1703,67 +1637,38 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
         // Moving the first person camera
         case IRR_KEY_W:
         {
-            if (cam)
-            {
-                core::vector3df vel(cam->getLinearVelocity());
-                vel.Z = value ? cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f) : 0;
-                cam->setLinearVelocity(vel);
-            }
+            moveFPCamera(0, 0, (value ? 1 : 0), shift_pressed);
             break;
         }
         case IRR_KEY_S:
         {
-            if (cam)
-            {
-                core::vector3df vel(cam->getLinearVelocity());
-                vel.Z = value ? -cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f) : 0;
-                cam->setLinearVelocity(vel);
-            }
+            moveFPCamera(0, 0, (value ? -1 : 0), shift_pressed);
             break;
         }
         case IRR_KEY_D:
         {
-            if (cam)
-            {
-                core::vector3df vel(cam->getLinearVelocity());
-                vel.X = value ? -cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f) : 0;
-                cam->setLinearVelocity(vel);
-            }
+            moveFPCamera((value ? -1 : 0), 0, 0, shift_pressed);
             break;
         }
         case IRR_KEY_A:
         {
-            if (cam)
-            {
-                core::vector3df vel(cam->getLinearVelocity());
-                vel.X = value ? cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f) : 0;
-                cam->setLinearVelocity(vel);
-            }
+            moveFPCamera((value ? 1 : 0), 0, 0, shift_pressed);
             break;
         }
         case IRR_KEY_E:
         {
-            if (cam)
-            {
-                core::vector3df vel(cam->getLinearVelocity());
-                vel.Y = value ? cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f) : 0;
-                cam->setLinearVelocity(vel);
-            }
+            moveFPCamera(0, (value ? 1 : 0), 0, shift_pressed);
             break;
         }
         case IRR_KEY_Q:
         {
-            if (cam)
-            {
-                core::vector3df vel(cam->getLinearVelocity());
-                vel.Y = value ? -cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f) : 0;
-                cam->setLinearVelocity(vel);
-            }
+            moveFPCamera(0, (value ? -1 : 0), 0, shift_pressed);
             break;
         }
         // Rotating the first person camera
         case IRR_KEY_R:
         {
+            CameraFPS *cam = dynamic_cast<CameraFPS*>(Camera::getActiveCamera());
             if (cam)
             {
                 cam->setAngularVelocity(value ?
@@ -1773,6 +1678,7 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
         }
         case IRR_KEY_F:
         {
+            CameraFPS *cam = dynamic_cast<CameraFPS*>(Camera::getActiveCamera());
             if (cam)
             {
                 cam->setAngularVelocity(value ?
@@ -1783,6 +1689,24 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
         default : break;
     }
 }
+
+// ----------------------------------------------------------------------------
+/** Allows to move (or stop the movement) of the first-person camera.
+ * A negative input allows to move the camera in the opposite direction
+ */
+void moveFPCamera(int X, int Y, int Z, bool shift_pressed)
+{
+    CameraFPS *cam = dynamic_cast<CameraFPS*>(Camera::getActiveCamera());
+    if (cam)
+    {
+        core::vector3df vel(cam->getLinearVelocity());
+        float cam_speed = cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f);
+        vel.X = X * cam_speed;
+        vel.Y = Y * cam_speed;
+        vel.Z = Z * cam_speed;
+        cam->setLinearVelocity(vel);
+    }
+}   // moveFPCamera
 
 // ----------------------------------------------------------------------------
 /** Returns if the debug menu is visible.
