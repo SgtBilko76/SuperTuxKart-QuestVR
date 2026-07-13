@@ -1663,37 +1663,26 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
             kart->flyDown();
             break;
         }
-        // Moving the first person camera
+        // Moving the first person camera. The parameters are the axis,
+        // movement direction (0 to stop), and shift status (for speedup)
         case IRR_KEY_W:
-        {
-            moveFPCamera(0, 0, (value ? 1 : 0), shift_pressed);
+            moveFPCamera(DEBUG_MOVE_Z, (value ? 1 : 0), shift_pressed);
             break;
-        }
         case IRR_KEY_S:
-        {
-            moveFPCamera(0, 0, (value ? -1 : 0), shift_pressed);
+            moveFPCamera(DEBUG_MOVE_Z, (value ? -1 : 0), shift_pressed);
             break;
-        }
         case IRR_KEY_D:
-        {
-            moveFPCamera((value ? -1 : 0), 0, 0, shift_pressed);
+            moveFPCamera(DEBUG_MOVE_X, (value ? -1 : 0), shift_pressed);
             break;
-        }
         case IRR_KEY_A:
-        {
-            moveFPCamera((value ? 1 : 0), 0, 0, shift_pressed);
+            moveFPCamera(DEBUG_MOVE_X, (value ? 1 : 0), shift_pressed);
             break;
-        }
         case IRR_KEY_E:
-        {
-            moveFPCamera(0, (value ? 1 : 0), 0, shift_pressed);
+            moveFPCamera(DEBUG_MOVE_Y, (value ? 1 : 0), shift_pressed);
             break;
-        }
         case IRR_KEY_Q:
-        {
-            moveFPCamera(0, (value ? -1 : 0), 0, shift_pressed);
+            moveFPCamera(DEBUG_MOVE_Y, (value ? -1 : 0), shift_pressed);
             break;
-        }
         // Rotating the first person camera
         case IRR_KEY_R:
         {
@@ -1717,22 +1706,36 @@ void handleStaticAction(int key, int value, bool control_pressed, bool shift_pre
         }
         default : break;
     }
-}
+}   // handleStaticAction
 
 // ----------------------------------------------------------------------------
 /** Allows to move (or stop the movement) of the first-person camera.
- * A negative input allows to move the camera in the opposite direction
- */
-void moveFPCamera(int X, int Y, int Z, bool shift_pressed)
+ * The move_value parameter controls direction (1 forward, -1 backward, 0 to stop)
+ * */
+void moveFPCamera(DebugMoveCamera axis, int move_value, bool shift_pressed)
 {
     CameraFPS *cam = dynamic_cast<CameraFPS*>(Camera::getActiveCamera());
     if (cam)
     {
         core::vector3df vel(cam->getLinearVelocity());
-        float cam_speed = cam->getMaximumVelocity() * (shift_pressed ? 3.0f : 1.0f);
-        vel.X = X * cam_speed;
-        vel.Y = Y * cam_speed;
-        vel.Z = Z * cam_speed;
+        float cam_speed = (shift_pressed ? 3.0f : 1.0f) * cam->getMaximumVelocity();
+
+        if (axis == DEBUG_MOVE_X)
+            vel.X = cam_speed * move_value;
+        else if (axis == DEBUG_MOVE_Y)
+            vel.Y = cam_speed * move_value;
+        else if (axis == DEBUG_MOVE_Z)
+            vel.Z = cam_speed * move_value;
+
+        // If multiple keys are pressed, only the last one repeat inputs,
+        // so we need some extra code to update all axes based on shift press
+        if      (vel.X > 0.0f) vel.X = cam_speed;
+        else if (vel.X < 0.0f) vel.X = -cam_speed;
+        if      (vel.Y > 0.0f) vel.Y = cam_speed;
+        else if (vel.Y < 0.0f) vel.Y = -cam_speed;
+        if      (vel.Z > 0.0f) vel.Z = cam_speed;
+        else if (vel.Z < 0.0f) vel.Z = -cam_speed;
+
         cam->setLinearVelocity(vel);
     }
 }   // moveFPCamera

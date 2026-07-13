@@ -25,12 +25,19 @@ namespace irr {
 
 namespace Debug
 {
+    enum DebugMoveCamera
+    {
+        DEBUG_MOVE_X,
+        DEBUG_MOVE_Y,
+        DEBUG_MOVE_Z
+    }; // DebugMoveCamera
+
     bool onEvent(const irr::SEvent &event);
     bool isOpen();
     void closeDebugMenu();
     void handleStaticAction(int key, int value,
                             bool control_pressed, bool shift_pressed);
-    void moveFPCamera(int X, int Y, int Z, bool shift_pressed);
+    void moveFPCamera(DebugMoveCamera axis, int move_value, bool shift_pressed);
 }
 
 
