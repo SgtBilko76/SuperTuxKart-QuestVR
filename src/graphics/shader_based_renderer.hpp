@@ -84,6 +84,9 @@ private:
     void renderPostProcessing(Camera * const camera, bool first_cam);
     void preloadShaderFiles();
     void renderShadows();
+#ifdef ENABLE_OPENXR
+    bool renderVR(float dt, bool is_loading);
+#endif
 
 public:
     ShaderBasedRenderer();

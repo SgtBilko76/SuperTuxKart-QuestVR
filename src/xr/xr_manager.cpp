@@ -660,6 +660,98 @@ bool XRManager::beginFrame()
 }   // beginFrame
 
 // ----------------------------------------------------------------------------
+/** Rotates a vector by an OpenXR (right-handed) quaternion. */
+static void rotateVecByQuat(const XrQuaternionf& q, float vx, float vy,
+                            float vz, float& ox, float& oy, float& oz)
+{
+    const float ux = q.x, uy = q.y, uz = q.z, s = q.w;
+    const float dot_uv = ux * vx + uy * vy + uz * vz;
+    const float dot_uu = ux * ux + uy * uy + uz * uz;
+    float cx = uy * vz - uz * vy;
+    float cy = uz * vx - ux * vz;
+    float cz = ux * vy - uy * vx;
+    ox = 2.0f * dot_uv * ux + (s * s - dot_uu) * vx + 2.0f * s * cx;
+    oy = 2.0f * dot_uv * uy + (s * s - dot_uu) * vy + 2.0f * s * cy;
+    oz = 2.0f * dot_uv * uz + (s * s - dot_uu) * vz + 2.0f * s * cz;
+}   // rotateVecByQuat
+
+// ----------------------------------------------------------------------------
+/** OpenXR's tracking space is right-handed with -Z forward (same as
+ *  OpenGL); STK/Irrlicht is left-handed with +Z forward. Both use the same
+ *  X (right) and Y (up) axes, so converting a single position or direction
+ *  vector between the two is exactly a Z negation. */
+static core::vector3df xrToStk(float x, float y, float z)
+{
+    return core::vector3df(x, y, -z);
+}   // xrToStk
+
+// ----------------------------------------------------------------------------
+core::matrix4 XRManager::getEyeProjectionMatrix(int eye, float zNear,
+                                                float zFar) const
+{
+    core::matrix4 m;
+    if (!m_views_valid)
+        return m;
+    const XrFovf& fov = m_views[eye].fov;
+    const float tan_left   = tanf(fov.angleLeft);
+    const float tan_right  = tanf(fov.angleRight);
+    const float tan_up     = tanf(fov.angleUp);
+    const float tan_down   = tanf(fov.angleDown);
+    const float tan_width  = tan_right - tan_left;
+    const float tan_height = tan_up - tan_down;
+
+    float* M = m.pointer();
+    M[0] = 2.0f / tan_width;
+    M[1] = 0.0f;
+    M[2] = 0.0f;
+    M[3] = 0.0f;
+
+    M[4] = 0.0f;
+    M[5] = 2.0f / tan_height;
+    M[6] = 0.0f;
+    M[7] = 0.0f;
+
+    // Asymmetric-frustum skew terms; both reduce to 0 for a symmetric FOV
+    // (tan_right == -tan_left, tan_up == -tan_down), matching
+    // buildProjectionMatrixPerspectiveFovLH exactly in that case.
+    M[8] = -(tan_right + tan_left) / tan_width;
+    M[9] = -(tan_up + tan_down) / tan_height;
+    M[10] = zFar / (zFar - zNear);
+    M[11] = 1.0f;
+
+    M[12] = 0.0f;
+    M[13] = 0.0f;
+    M[14] = -zNear * zFar / (zFar - zNear);
+    M[15] = 0.0f;
+    return m;
+}   // getEyeProjectionMatrix
+
+// ----------------------------------------------------------------------------
+core::matrix4 XRManager::getEyeViewAffector(int eye) const
+{
+    core::matrix4 m;   // identity if views aren't valid yet
+    if (!m_views_valid)
+        return m;
+    const XrPosef& pose = m_views[eye].pose;
+
+    const core::vector3df pos = xrToStk(pose.position.x, pose.position.y,
+                                        pose.position.z);
+    float fx, fy, fz, ux, uy, uz;
+    // OpenXR cameras look down their local -Z axis.
+    rotateVecByQuat(pose.orientation, 0.0f, 0.0f, -1.0f, fx, fy, fz);
+    rotateVecByQuat(pose.orientation, 0.0f, 1.0f, 0.0f, ux, uy, uz);
+    const core::vector3df forward = xrToStk(fx, fy, fz);
+    const core::vector3df up = xrToStk(ux, uy, uz);
+
+    // Built exactly like Irrlicht's own buildCameraLookAtMatrixLH, just in
+    // the base camera's view space (identity = looking straight ahead)
+    // rather than world space, so it can be layered on top of STK's normal
+    // (kart-following) camera via setViewMatrixAffector().
+    m.buildCameraLookAtMatrixLH(pos, pos + forward, up);
+    return m;
+}   // getEyeViewAffector
+
+// ----------------------------------------------------------------------------
 GLuint XRManager::acquireScreenImage()
 {
     XRSwapchain& sc = m_screen_swapchain;
@@ -847,7 +939,10 @@ bool XRManager::presentFlatScreen(unsigned fb_width, unsigned fb_height)
     if (!m_frame_begun)
         return true;
 
-    if (m_should_render && fb_width > 0 && fb_height > 0)
+    // If per-eye stereo rendering already queued a projection layer this
+    // frame (ShaderBasedRenderer::renderVR), the eyes already have their
+    // final image and there is nothing left to blit here.
+    if (!m_submit_projection && m_should_render && fb_width > 0 && fb_height > 0)
     {
         uint32_t w = std::min<uint32_t>(fb_width, m_view_config[0].maxImageRectWidth);
         uint32_t h = std::min<uint32_t>(fb_height, m_view_config[0].maxImageRectHeight);

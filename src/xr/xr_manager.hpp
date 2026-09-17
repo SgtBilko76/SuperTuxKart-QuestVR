@@ -21,6 +21,7 @@
 #ifdef ENABLE_OPENXR
 
 #include "graphics/gl_headers.hpp"
+#include <matrix4.h>
 #include <EGL/egl.h>
 #include <jni.h>
 
@@ -32,6 +33,8 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+
+using namespace irr;
 
 /** One OpenXR swapchain plus the GL framebuffer objects wrapping each of its
  *  images, so STK can simply glBindFramebuffer() one of them and draw. */
@@ -139,6 +142,11 @@ public:
     bool isSessionRunning() const       { return m_session_running; }
     bool isExitRequested() const        { return m_exit_requested; }
 
+    /** For src/xr/xr_input.cpp: the action-set/binding/sync calls need the
+     *  raw instance and session handles. */
+    XrInstance getInstance() const      { return m_instance; }
+    XrSession getSession() const        { return m_session; }
+
     void pollEvents();
 
     /** xrWaitFrame + xrBeginFrame + xrLocateViews. Safe to call once per
@@ -151,6 +159,16 @@ public:
     const XrView* getViews() const      { return m_views_valid ? m_views : NULL; }
     const XrViewConfigurationView& getViewConfig(int eye) const
                                         { return m_view_config[eye]; }
+
+    /** Asymmetric-frustum projection matrix for one eye, in the engine's
+     *  left-handed, 0..1-depth convention (matches
+     *  matrix4::buildProjectionMatrixPerspectiveFovLH). */
+    core::matrix4 getEyeProjectionMatrix(int eye, float zNear, float zFar) const;
+    /** View-space affector representing the head/eye pose relative to a
+     *  neutral, forward-facing seated position, for use with
+     *  ICameraSceneNode::setViewMatrixAffector() on top of STK's normal
+     *  (kart-following) camera. Identity if views aren't valid yet. */
+    core::matrix4 getEyeViewAffector(int eye) const;
 
     // ------------------------------------------------------------------------
     // 2D screen (quad layer)
