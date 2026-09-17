@@ -66,6 +66,7 @@ android/bin
 android/build
 android/deps-*
 android/libs
+android/mesa
 android/obj
 android/res
 android/.gradle
@@ -91,5 +92,7 @@ lib/sdl2
 lib/mbedtls
 lib/astc-encoder
 lib/shaderc
+lib/mesa
+lib/libadrenotools
 
 .DS_Store

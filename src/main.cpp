@@ -293,6 +293,7 @@ extern "C" {
 #include "utils/string_utils.hpp"
 #include "utils/translation.hpp"
 #include "io/rich_presence.hpp"
+#include "xr/xr_manager.hpp"
 
 #include <IrrlichtDevice.h>
 
@@ -2372,6 +2373,20 @@ int main(int argc, char *argv[])
         story_mode_timer = new StoryModeTimer();
         initRest();
 
+#ifdef ENABLE_OPENXR
+        // The GL context exists now: bring up the OpenXR session. If the
+        // runtime is unavailable STK simply keeps running as a flat app.
+        if (!GUIEngine::isNoGraphics())
+        {
+            XRManager::create();
+            if (!XRManager::get()->init())
+            {
+                Log::warn("main", "OpenXR initialisation failed, running flat.");
+                XRManager::destroy();
+            }
+        }
+#endif
+
 #ifdef ENABLE_WIIUSE
         wiimote_manager = new WiimoteManager();
 #endif
@@ -2864,6 +2879,10 @@ static void cleanUserConfig()
         delete user_config;
     }
 
+#ifdef ENABLE_OPENXR
+    // Needs the GL context, so before irr_driver goes away.
+    XRManager::destroy();
+#endif
     if(irr_driver)              delete irr_driver;
 }   // cleanUserConfig
 

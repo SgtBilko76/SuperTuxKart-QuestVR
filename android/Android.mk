@@ -132,6 +132,15 @@ include $(CLEAR_VARS)
 endif
 
 
+# OpenXR loader (Khronos openxr_loader_for_android AAR, see deps/openxr/VERSION)
+ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
+LOCAL_MODULE       := openxr_loader
+LOCAL_SRC_FILES    := deps-$(TARGET_ARCH_ABI)/openxr/lib/libopenxr_loader.so
+include $(PREBUILT_SHARED_LIBRARY)
+include $(CLEAR_VARS)
+endif
+
+
 # ifaddrs
 LOCAL_MODULE    := ifaddrs
 LOCAL_PATH      := .
@@ -272,6 +281,7 @@ LOCAL_CFLAGS       := -I../lib/irrlicht/source/Irrlicht/ \
                       -I../lib/irrlicht/include/         \
                       -I../src                           \
                       -Ideps-$(TARGET_ARCH_ABI)/libjpeg/ \
+                      -Ideps-$(TARGET_ARCH_ABI)/libjpeg/src/ \
                       -Ideps-$(TARGET_ARCH_ABI)/libpng/  \
                       -Ideps-$(TARGET_ARCH_ABI)/zlib/    \
                       -I../lib/sdl2/include/             \
@@ -386,6 +396,13 @@ LOCAL_CFLAGS       := -I../lib/angelscript/include      \
                       -DSUPERTUXKART_VERSION=\"$(PROJECT_VERSION)\" \
                       -DANDROID_PACKAGE_CLASS_NAME=\"$(PACKAGE_CLASS_NAME)\"
 LOCAL_CPPFLAGS     := -std=gnu++0x
+
+ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
+# OpenXR support for Meta Quest (src/xr)
+LOCAL_CFLAGS       += -DENABLE_OPENXR -Ideps-$(TARGET_ARCH_ABI)/openxr/include
+LOCAL_LDLIBS       += -lEGL -lGLESv3
+LOCAL_SHARED_LIBRARIES := openxr_loader
+endif
 
 LOCAL_STATIC_LIBRARIES := irrlicht bullet enet ifaddrs angelscript mcpp SDL2 \
                           vorbisfile vorbis ogg openal curl libmbedtls       \

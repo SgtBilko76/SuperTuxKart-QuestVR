@@ -238,6 +238,7 @@ build_deps()
                 -DBUILD_TESTING=OFF -DBUILD_CURL_EXE=OFF                      \
                 -DCURL_USE_MBEDTLS=ON -DUSE_ZLIB=ON -DCURL_USE_OPENSSL=OFF    \
                 -DCURL_USE_LIBSSH=OFF -DCURL_USE_LIBSSH2=OFF                  \
+                -DCURL_USE_LIBPSL=OFF                                        \
                 -DCURL_USE_GSSAPI=OFF -DUSE_NGHTTP2=OFF -DUSE_QUICHE=OFF      \
                 -DHTTP_ONLY=ON -DCURL_CA_BUNDLE=none -DCURL_CA_PATH=none      \
                 -DENABLE_THREADED_RESOLVER=ON -DCMAKE_C_FLAGS="-fpic -O3 -g" &&
@@ -312,6 +313,7 @@ build_deps()
                 -DSPIRV_HEADERS_SKIP_INSTALL=1 -DSPIRV_HEADERS_SKIP_EXAMPLES=1 \
                 -DSKIP_SPIRV_TOOLS_INSTALL=1 -DSPIRV_SKIP_TESTS=1              \
                 -DSPIRV_SKIP_EXECUTABLES=1 -DENABLE_GLSLANG_BINARIES=0         \
+                -DSKIP_GLSLANG_INSTALL=ON                                      \
                 -DENABLE_CTEST=0 &&
         make -j $(($(nproc) + 1))
         # Strip debug symbol to make app bundle smaller

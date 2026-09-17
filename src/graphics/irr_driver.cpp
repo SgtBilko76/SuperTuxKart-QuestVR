@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "graphics/irr_driver.hpp"
+#include "xr/xr_manager.hpp"
 
 #include "challenges/story_mode_timer.hpp"
 #include "config/player_manager.hpp"
@@ -2175,6 +2176,16 @@ void IrrDriver::update(float dt, bool is_loading)
     }
 
     handleWindowResize();
+
+#ifdef ENABLE_OPENXR
+    // Wait for the VR compositor's frame slot and fetch the eye poses before
+    // the frame is simulated and rendered.
+    if (XRManager::isVRActive())
+    {
+        XRManager::get()->pollEvents();
+        XRManager::get()->beginFrame();
+    }
+#endif
 
     if (show_dialog_yes)
         new ConfirmResolutionDialog(false);
