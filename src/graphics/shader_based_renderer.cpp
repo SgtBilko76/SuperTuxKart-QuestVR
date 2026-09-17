@@ -43,6 +43,7 @@
 #include "physics/physics.hpp"
 #include "states_screens/race_gui_base.hpp"
 #include "tracks/track.hpp"
+#include "xr/xr_manager.hpp"
 #include "utils/profiler.hpp"
 #include "utils/string_utils.hpp"
 
@@ -713,9 +714,23 @@ void ShaderBasedRenderer::addSunLight(const core::vector3df &pos)
 // ----------------------------------------------------------------------------
 void ShaderBasedRenderer::render(float dt, bool is_loading)
 {
+#ifdef ENABLE_OPENXR
+    // Stereo per-eye rendering replaces the whole splitscreen/GUI body
+    // below; it still falls through to the shared endScene() call, which
+    // is what actually hands the frame to the OpenXR compositor (see
+    // stk_xr_present() / COGLES2Driver::endScene()).
+    if (XRManager::isVRActive() && renderVR(dt, is_loading))
+    {
+        PROFILER_PUSH_CPU_MARKER("EndScene", 0x45, 0x75, 0x45);
+        irr_driver->getVideoDriver()->endScene();
+        PROFILER_POP_CPU_MARKER();
+        m_post_processing->update(dt);
+        return;
+    }
+#endif
     World *world = World::getWorld(); // Never NULL.
     Track *track = Track::getCurrentTrack();
-    
+
     RaceGUIBase *rg = world->getRaceGUI();
     if (rg) rg->update(dt);
 
@@ -831,6 +846,112 @@ void ShaderBasedRenderer::render(float dt, bool is_loading)
 
     m_post_processing->update(dt);
 } //render
+
+// ----------------------------------------------------------------------------
+#ifdef ENABLE_OPENXR
+/** Renders the single local player's camera twice, once per eye, into the
+ *  OpenXR projection swapchains, instead of the normal splitscreen loop in
+ *  render(). Returns false (falling back to the flat single-view path) if
+ *  the VR session or this frame's head-tracking data isn't ready yet. */
+bool ShaderBasedRenderer::renderVR(float dt, bool is_loading)
+{
+    XRManager* xr = XRManager::get();
+    if (!xr->isSessionRunning() || !xr->createEyeSwapchains() ||
+        !xr->getViews() || Camera::getNumCameras() == 0)
+        return false;
+
+    World *world = World::getWorld();
+    Track *track = Track::getCurrentTrack();
+    RaceGUIBase *rg = world->getRaceGUI();
+    if (rg) rg->update(dt);
+
+    if (!CVS->isDeferredEnabled())
+        prepareForwardRenderer();
+
+    static_cast<scene::CSceneManager *>(irr_driver->getSceneManager())
+        ->OnAnimate(os::Timer::getTime());
+
+    SP::sp_cur_player = 0;
+    SP::sp_cur_buf_id[0] = (SP::sp_cur_buf_id[0] + 1) % 3;
+
+    Camera * const camera = Camera::getCamera(0);
+    scene::ICameraSceneNode * const camnode = camera->getCameraSceneNode();
+    irr_driver->getSceneManager()->setActiveCamera(camnode);
+    if (rg) rg->preRenderCallback(camera);
+
+    const bool isRace = StateManager::get()->getGameState() == GUIEngine::GAME;
+    const float z_near = camnode->getNearValue();
+    const float z_far = camnode->getFarValue();
+
+    for (int eye = 0; eye < 2; eye++)
+    {
+        GLuint fbo = xr->acquireEyeImage(eye);
+        if (fbo == 0)
+            continue;   // compositor didn't hand us an image this frame
+        const XRSwapchain& sc = xr->getEyeSwapchain(eye);
+
+        // Per-eye head-tracked projection/view, layered on top of STK's
+        // normal (kart-following) camera via the view-matrix affector.
+        camnode->setProjectionMatrix(
+            xr->getEyeProjectionMatrix(eye, z_near, z_far), false);
+        camnode->setViewMatrixAffector(xr->getEyeViewAffector(eye));
+
+        computeMatrixesAndCameras(camnode, sc.m_width, sc.m_height);
+
+        if (CVS->isDeferredEnabled())
+        {
+            renderSceneDeferred(camnode, dt, track->hasShadows(), false);
+            if (!is_loading)
+            {
+                FrameBuffer *pp_fbo =
+                    m_post_processing->render(camnode, isRace, m_rtts);
+                glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+                glViewport(0, 0, sc.m_width, sc.m_height);
+                if (eye == 0)
+                {
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+                            GL_STENCIL_BUFFER_BIT);
+                }
+                m_post_processing->renderPassThrough(pp_fbo->getRTT()[0],
+                    sc.m_width, sc.m_height);
+                glBindVertexArray(0);
+            }
+        }
+        else
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+            glViewport(0, 0, sc.m_width, sc.m_height);
+            renderScene(camnode, dt, track->hasShadows(), false);
+        }
+
+        xr->releaseEyeImage(eye);
+    }
+
+    camera->setPreviousPVMatrix(irr_driver->getProjViewMatrix());
+    xr->queueProjectionLayer();
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+
+    // Restore the default framebuffer/viewport: the 2D GUI (menus, HUD)
+    // still renders normally here and reaches the headset via the existing
+    // flat-screen quad layer (see presentFlatScreen()), not the eyes.
+    glBindFramebuffer(GL_FRAMEBUFFER, irr_driver->getDefaultFramebuffer());
+    glViewport(0, 0, irr_driver->getActualScreenSize().Width,
+        irr_driver->getActualScreenSize().Height);
+    m_current_screen_size = core::vector2df(
+                                    (float)irr_driver->getActualScreenSize().Width,
+                                    (float)irr_driver->getActualScreenSize().Height);
+
+    {
+        ScopedGPUTimer Timer(irr_driver->getGPUTimer(Q_GUI));
+        GUIEngine::render(dt, is_loading);
+    }
+    return true;
+}   // renderVR
+#endif
 
 // ----------------------------------------------------------------------------
 std::unique_ptr<RenderTarget> ShaderBasedRenderer::createRenderTarget(const irr::core::dimension2du &dimension,

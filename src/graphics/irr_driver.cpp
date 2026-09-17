@@ -16,6 +16,7 @@
 //  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "graphics/irr_driver.hpp"
+#include "xr/xr_input.hpp"
 #include "xr/xr_manager.hpp"
 
 #include "challenges/story_mode_timer.hpp"
@@ -2184,6 +2185,8 @@ void IrrDriver::update(float dt, bool is_loading)
     {
         XRManager::get()->pollEvents();
         XRManager::get()->beginFrame();
+        if (XRInput::get())
+            XRInput::get()->update();
     }
 #endif
 

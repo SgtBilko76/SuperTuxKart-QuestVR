@@ -293,6 +293,7 @@ extern "C" {
 #include "utils/string_utils.hpp"
 #include "utils/translation.hpp"
 #include "io/rich_presence.hpp"
+#include "xr/xr_input.hpp"
 #include "xr/xr_manager.hpp"
 
 #include <IrrlichtDevice.h>
@@ -2384,6 +2385,13 @@ int main(int argc, char *argv[])
                 Log::warn("main", "OpenXR initialisation failed, running flat.");
                 XRManager::destroy();
             }
+            else
+            {
+                XRInput::create();
+                if (!XRInput::get()->init())
+                    Log::warn("main", "OpenXR controller input setup failed;"
+                        " Quest Touch controllers won't work.");
+            }
         }
 #endif
 
@@ -2881,6 +2889,7 @@ static void cleanUserConfig()
 
 #ifdef ENABLE_OPENXR
     // Needs the GL context, so before irr_driver goes away.
+    XRInput::destroy();
     XRManager::destroy();
 #endif
     if(irr_driver)              delete irr_driver;
