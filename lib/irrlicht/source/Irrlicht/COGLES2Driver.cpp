@@ -6,6 +6,12 @@
 // For conditions of distribution and use, see copyright notice in Irrlicht.h
 
 #include "COGLES2Driver.h"
+
+#ifdef ANDROID
+// Defined in src/xr/xr_manager.cpp: presents the frame through OpenXR when
+// VR is active and returns false when a normal window swap is wanted.
+extern "C" bool stk_xr_present(unsigned width, unsigned height);
+#endif
 // needed here also because of the create methods' parameters
 #include "CNullDriver.h"
 
@@ -468,6 +474,11 @@ namespace video
 			return false;
 		}
 #elif defined(_IRR_COMPILE_WITH_SDL_DEVICE_)
+#ifdef ANDROID
+		// When OpenXR is active (Meta Quest build) the frame is handed to
+		// the VR compositor instead of the (invisible) Android window.
+		if (!stk_xr_present(getScreenSize().Width, getScreenSize().Height))
+#endif
 		SDL_GL_SwapWindow(static_cast<CIrrDeviceSDL*>(m_device)->getWindow());
 #endif
 
