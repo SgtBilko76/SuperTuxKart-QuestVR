@@ -81,6 +81,7 @@ XRManager::XRManager()
     memset(m_views, 0, sizeof(m_views));
     memset(m_proj_views, 0, sizeof(m_proj_views));
     memset(&m_proj_layer, 0, sizeof(m_proj_layer));
+    memset(&m_cylinder_layer, 0, sizeof(m_cylinder_layer));
     memset(&m_quad_layer, 0, sizeof(m_quad_layer));
 }   // XRManager
 
@@ -168,6 +169,11 @@ bool XRManager::createInstance()
     {
         enabled.push_back(XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME);
         m_has_refresh_rate_ext = true;
+    }
+    if (has_ext(XR_KHR_COMPOSITION_LAYER_CYLINDER_EXTENSION_NAME))
+    {
+        enabled.push_back(XR_KHR_COMPOSITION_LAYER_CYLINDER_EXTENSION_NAME);
+        m_has_cylinder_ext = true;
     }
     for (unsigned i = 0; i < ext_count; i++)
         Log::debug("XR", "Runtime extension: %s", exts[i].extensionName);
@@ -640,6 +646,7 @@ bool XRManager::beginFrame()
     m_should_render = fs.shouldRender == XR_TRUE;
     m_predicted_display_time = fs.predictedDisplayTime;
     m_submit_projection = false;
+    m_submit_cylinder = false;
     m_submit_quad = false;
 
     XrViewLocateInfo li = {XR_TYPE_VIEW_LOCATE_INFO};
@@ -783,26 +790,56 @@ void XRManager::releaseScreenImage()
     xrReleaseSwapchainImage(sc.m_handle, &ri);
     sc.m_acquired_index = -1;
 
-    memset(&m_quad_layer, 0, sizeof(m_quad_layer));
-    m_quad_layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
-    m_quad_layer.layerFlags = 0;
-    m_quad_layer.space = m_local_space;
-    m_quad_layer.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
-    m_quad_layer.subImage.swapchain = sc.m_handle;
-    m_quad_layer.subImage.imageRect.offset.x = 0;
-    m_quad_layer.subImage.imageRect.offset.y = 0;
-    m_quad_layer.subImage.imageRect.extent.width = (int32_t)sc.m_width;
-    m_quad_layer.subImage.imageRect.extent.height = (int32_t)sc.m_height;
-    m_quad_layer.subImage.imageArrayIndex = 0;
-    m_quad_layer.pose.orientation.w = 1.0f;
-    m_quad_layer.pose.position.x = 0.0f;
-    m_quad_layer.pose.position.y = 0.0f;
-    m_quad_layer.pose.position.z = -2.0f;
-    // A ~2.6 m wide virtual screen 2 m away (~66 degrees of view).
-    const float width_m = 2.6f;
-    m_quad_layer.size.width = width_m;
-    m_quad_layer.size.height = width_m * (float)sc.m_height / (float)sc.m_width;
-    m_submit_quad = true;
+    // A screen ~2 m away, curving through about 74 degrees - roughly the
+    // same size/distance as the old flat quad, just wrapped onto a curve
+    // so its edges don't recede away from the viewer.
+    const float radius_m = 1.3f;
+    const float central_angle = 1.3f;   // radians, ~74 degrees
+
+    if (m_has_cylinder_ext)
+    {
+        memset(&m_cylinder_layer, 0, sizeof(m_cylinder_layer));
+        m_cylinder_layer.type = XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR;
+        m_cylinder_layer.layerFlags = 0;
+        m_cylinder_layer.space = m_local_space;
+        m_cylinder_layer.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
+        m_cylinder_layer.subImage.swapchain = sc.m_handle;
+        m_cylinder_layer.subImage.imageRect.offset.x = 0;
+        m_cylinder_layer.subImage.imageRect.offset.y = 0;
+        m_cylinder_layer.subImage.imageRect.extent.width = (int32_t)sc.m_width;
+        m_cylinder_layer.subImage.imageRect.extent.height = (int32_t)sc.m_height;
+        m_cylinder_layer.subImage.imageArrayIndex = 0;
+        m_cylinder_layer.pose.orientation.w = 1.0f;
+        m_cylinder_layer.pose.position.x = 0.0f;
+        m_cylinder_layer.pose.position.y = 0.0f;
+        m_cylinder_layer.pose.position.z = -radius_m;
+        m_cylinder_layer.radius = radius_m;
+        m_cylinder_layer.centralAngle = central_angle;
+        m_cylinder_layer.aspectRatio = (float)sc.m_width / (float)sc.m_height;
+        m_submit_cylinder = true;
+    }
+    else
+    {
+        memset(&m_quad_layer, 0, sizeof(m_quad_layer));
+        m_quad_layer.type = XR_TYPE_COMPOSITION_LAYER_QUAD;
+        m_quad_layer.layerFlags = 0;
+        m_quad_layer.space = m_local_space;
+        m_quad_layer.eyeVisibility = XR_EYE_VISIBILITY_BOTH;
+        m_quad_layer.subImage.swapchain = sc.m_handle;
+        m_quad_layer.subImage.imageRect.offset.x = 0;
+        m_quad_layer.subImage.imageRect.offset.y = 0;
+        m_quad_layer.subImage.imageRect.extent.width = (int32_t)sc.m_width;
+        m_quad_layer.subImage.imageRect.extent.height = (int32_t)sc.m_height;
+        m_quad_layer.subImage.imageArrayIndex = 0;
+        m_quad_layer.pose.orientation.w = 1.0f;
+        m_quad_layer.pose.position.x = 0.0f;
+        m_quad_layer.pose.position.y = 0.0f;
+        m_quad_layer.pose.position.z = -radius_m;
+        const float width_m = radius_m * central_angle;
+        m_quad_layer.size.width = width_m;
+        m_quad_layer.size.height = width_m * (float)sc.m_height / (float)sc.m_width;
+        m_submit_quad = true;
+    }
 }   // releaseScreenImage
 
 // ----------------------------------------------------------------------------
@@ -892,7 +929,9 @@ void XRManager::endFrame()
     uint32_t count = 0;
     if (m_should_render && m_submit_projection)
         layers[count++] = (const XrCompositionLayerBaseHeader*)&m_proj_layer;
-    if (m_should_render && m_submit_quad)
+    if (m_should_render && m_submit_cylinder)
+        layers[count++] = (const XrCompositionLayerBaseHeader*)&m_cylinder_layer;
+    else if (m_should_render && m_submit_quad)
         layers[count++] = (const XrCompositionLayerBaseHeader*)&m_quad_layer;
 
     XrFrameEndInfo ei = {XR_TYPE_FRAME_END_INFO};
@@ -918,6 +957,7 @@ void XRManager::endFrame()
     }
     m_frame_begun = false;
     m_submit_projection = false;
+    m_submit_cylinder = false;
     m_submit_quad = false;
 }   // endFrame
 

@@ -17,6 +17,10 @@
         <meta-data android:name="com.oculus.supportedDevices" android:value="all" />
         <meta-data android:name="com.oculus.vr.focusaware" android:value="true" />
 
+        <!-- PICO: tells the Pico launcher this is an immersive VR app. Ignored
+             (harmless) on Meta Quest, so one APK/manifest covers both. -->
+        <meta-data android:name="pvr.app.type" android:value="vr" />
+
         <activity android:name=".SuperTuxKartActivity"
                   android:label="@string/app_name"
                   android:launchMode="singleTask"

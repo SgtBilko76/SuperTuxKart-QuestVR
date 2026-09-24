@@ -145,7 +145,7 @@ bool XRInput::suggestBindings()
         { m_brake_action,     "/user/hand/left/input/trigger/value" },
         { m_nitro_action,     "/user/hand/right/input/a/click" },
         { m_fire_action,      "/user/hand/right/input/b/click" },
-        { m_drift_action,     "/user/hand/right/input/squeeze/click" },
+        { m_drift_action,     "/user/hand/left/input/thumbstick/click" },
         { m_rescue_action,    "/user/hand/left/input/x/click" },
         { m_look_back_action, "/user/hand/left/input/y/click" },
         { m_pause_action,     "/user/hand/left/input/menu/click" },
@@ -172,6 +172,34 @@ bool XRInput::suggestBindings()
     XR_CHECK(xrSuggestInteractionProfileBindings(instance, &suggested),
              "xrSuggestInteractionProfileBindings");
 
+    // PICO's controllers expose the exact same button/axis names (a/b/x/y/
+    // menu/trigger/thumbstick) under their own interaction profile paths, so
+    // the same binding table applies unchanged. This is non-fatal: on a
+    // runtime that doesn't recognise these profiles (e.g. Quest) the call
+    // is simply rejected and Touch-controller input above is unaffected.
+    const char* pico_profiles[] = {
+        "/interaction_profiles/bytedance/pico4_controller",
+        "/interaction_profiles/bytedance/pico4s_controller",
+        "/interaction_profiles/bytedance/pico_neo3_controller",
+    };
+    for (const char* pico_profile : pico_profiles)
+    {
+        XrPath ppath;
+        if (XR_FAILED(xrStringToPath(instance, pico_profile, &ppath)))
+            continue;
+        XrInteractionProfileSuggestedBinding psuggested =
+            {XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING};
+        psuggested.interactionProfile = ppath;
+        psuggested.suggestedBindings = bindings.data();
+        psuggested.countSuggestedBindings = (uint32_t)bindings.size();
+        XrResult r = xrSuggestInteractionProfileBindings(instance, &psuggested);
+        if (XR_FAILED(r))
+        {
+            Log::info("XRInput", "%s not supported by this runtime (%s), "
+                "skipping.", pico_profile, xrResultString(instance, r));
+        }
+    }
+
     XrSessionActionSetsAttachInfo attach_info =
         {XR_TYPE_SESSION_ACTION_SETS_ATTACH_INFO};
     attach_info.countActionSets = 1;
@@ -194,9 +222,23 @@ void XRInput::registerGamePad()
     DeviceManager* dm = input_manager->getDeviceManager();
     GamepadConfig* config = NULL;
     dm->getConfigForGamepad(m_gamepad_id, "Oculus Touch", &config);
+    // getConfigForGamepad() creates a fresh GamepadConfig with 0 axes;
+    // unlike button count, GamePadDevice's constructor never fixes this up,
+    // so every IT_STICKMOTION event would otherwise be rejected outright by
+    // GamePadDevice::processAndMapInput()'s "id >= getNumberOfAxes()" check.
+    config->setNumberOfAxis(2);
     GamePadDevice* device = new GamePadDevice(m_gamepad_id, "Oculus Touch",
         2 /* axes: steer, accel/brake */, 8 /* buttons */, config);
     dm->addGamepad(device);
+
+    // There is only ever one real input device on Quest. Make it the
+    // deterministic "latest used device" so STK's normal solo-play
+    // auto-join (KartSelectionScreen::init(), for !m_multiplayer) binds to
+    // it immediately instead of falling back to a phantom keyboard - see
+    // DeviceManager::getLatestUsedDevice()'s fallback comment. That existing
+    // auto-join is what actually calls setSinglePlayer() for us once a race
+    // is being set up; nothing else needs to be done here.
+    dm->setLatestUsedDevice(device);
 }   // registerGamePad
 
 // ----------------------------------------------------------------------------
@@ -277,6 +319,8 @@ void XRInput::update()
     dispatchAxis(1, m_last_throttle_val, throttle_val);
     m_last_throttle_val = throttle_val;
 
+    // Buttons 0-5 are STK's default gameplay binds (fire/nitro/drift/
+    // rescue/look-back/pause, see GamepadConfig::setDefaultBinds()).
     const XrAction button_actions[6] = { m_fire_action, m_nitro_action,
         m_drift_action, m_rescue_action, m_look_back_action, m_pause_action };
     for (int i = 0; i < 6; i++)
@@ -285,6 +329,17 @@ void XRInput::update()
         dispatchButton(i, m_last_button[i], pressed);
         m_last_button[i] = pressed;
     }
+
+    // Buttons 6/7 are STK's separate menu confirm/cancel binds (same
+    // GamepadConfig, lines 142-143) - reuse the A/B presses for those too,
+    // so the same physical buttons work both in races and in menus/dialogs.
+    bool nitro_pressed = getBool(m_nitro_action);
+    dispatchButton(6, m_last_button[6], nitro_pressed);
+    m_last_button[6] = nitro_pressed;
+
+    bool fire_pressed = getBool(m_fire_action);
+    dispatchButton(7, m_last_button[7], fire_pressed);
+    m_last_button[7] = fire_pressed;
 }   // update
 
 #endif   // ENABLE_OPENXR

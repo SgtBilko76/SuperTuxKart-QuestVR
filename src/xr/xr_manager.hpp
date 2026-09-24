@@ -103,13 +103,20 @@ private:
 
     bool m_has_srgb_write_control = false;
     bool m_has_refresh_rate_ext = false;
+    bool m_has_cylinder_ext = false;
     bool m_initialized = false;
 
     /** Layers submitted this frame. */
     XrCompositionLayerProjectionView m_proj_views[2];
     XrCompositionLayerProjection m_proj_layer;
+    /** Curved 2D screen (menus, and the whole game until stereo rendering
+     *  takes over): used when XR_KHR_composition_layer_cylinder is
+     *  available, which is the common case on Quest. */
+    XrCompositionLayerCylinderKHR m_cylinder_layer;
+    /** Flat fallback if the runtime doesn't support the cylinder layer. */
     XrCompositionLayerQuad m_quad_layer;
     bool m_submit_projection = false;
+    bool m_submit_cylinder = false;
     bool m_submit_quad = false;
 
     bool initLoader();

@@ -57,7 +57,8 @@ private:
 
     int m_last_steer_val = 0;
     int m_last_throttle_val = 0;
-    bool m_last_button[6] = { false, false, false, false, false, false };
+    bool m_last_button[8] = { false, false, false, false, false, false,
+                             false, false };
 
     bool createActions();
     bool suggestBindings();

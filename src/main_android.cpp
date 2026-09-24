@@ -122,6 +122,14 @@ void override_default_params_for_mobile()
     // Enable multitouch race GUI
     UserConfigParams::m_multitouch_draw_gui = true;
 
+#ifdef ENABLE_OPENXR
+    // On Quest there's no touchscreen/on-screen keyboard to type a player
+    // name into, so skip straight to an auto-created default player instead
+    // of the login/register screens (see the m_enforce_current_player check
+    // in main.cpp, just before UserScreen/RegisterScreen would be pushed).
+    UserConfigParams::m_enforce_current_player = true;
+#endif
+
 #ifdef ANDROID
     // For usage in StringUtils::getUserAgentString
     if (SDL_IsAndroidTV())

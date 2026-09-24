@@ -168,6 +168,7 @@ public:
 
     void                clearLatestUsedDevice();
     InputDevice*        getLatestUsedDevice();
+    void                setLatestUsedDevice(InputDevice* d) { m_latest_used_device = d; }
     bool initialize();
     void save();
 

@@ -719,7 +719,20 @@ void ShaderBasedRenderer::render(float dt, bool is_loading)
     // below; it still falls through to the shared endScene() call, which
     // is what actually hands the frame to the OpenXR compositor (see
     // stk_xr_present() / COGLES2Driver::endScene()).
-    if (XRManager::isVRActive() && renderVR(dt, is_loading))
+    //
+    // Disabled for now: renderVR() renders into m_rtts, whose resolution is
+    // fixed at world-load time from the (VR-irrelevant) window/splitscreen
+    // viewport rather than the actual per-eye swapchain size, so the 3D
+    // scene ends up rendered at the wrong aspect ratio/scale within each
+    // eye image (confirmed via on-device screenshots showing tiny,
+    // squeezed-into-a-corner geometry against an otherwise blank eye
+    // image). Needs onLoadWorld()/setRTT() to size m_rtts from the eye
+    // swapchain dimensions when VR is active before this can be
+    // re-enabled. Until then, races fall through to the normal flat
+    // render path below, shown via the already-reliable flat-screen/
+    // cylinder presentation (see presentFlatScreen()) - no stereo depth,
+    // but no corruption either.
+    if (false && XRManager::isVRActive() && renderVR(dt, is_loading))
     {
         PROFILER_PUSH_CPU_MARKER("EndScene", 0x45, 0x75, 0x45);
         irr_driver->getVideoDriver()->endScene();
